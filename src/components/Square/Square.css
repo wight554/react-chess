@@ -1,0 +1,10 @@
+.Square {
+    flex: 1;
+    padding: 10px;
+    justify-content: center;
+    align-items: center;
+}
+.Square > img {
+    max-width: 50px;
+    max-height: 50px;
+}
