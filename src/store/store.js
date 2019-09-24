@@ -1,15 +1,17 @@
 import { createStore, combineReducers } from 'redux';
-import { field, focus, initialFieldState, initialFocusState } from '../reducers';
+import { field, focus, player, initialFieldState, initialFocusState, initialPlayerState } from '../reducers';
 
 const initialStoreState = {
   field: initialFieldState,
-  focus: initialFocusState
+  focus: initialFocusState,
+  player: initialPlayerState
 };
 
 const store = createStore(
   combineReducers({
     field,
-    focus
+    focus,
+    player
   }),
   initialStoreState,
   window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()

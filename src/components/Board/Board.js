@@ -3,21 +3,27 @@ import {connect} from 'react-redux';
 import BoardRow from '../BoardRow';
 import Piece from '../Piece';
 import Square from '../Square';
-import { changeField, changeFocus } from '../../actions'
-import { getField, getFocus } from '../../selectors'
+import { changeField, changeFocus, changePlayer } from '../../actions'
+import { getField, getFocus, getPlayer } from '../../selectors'
 import './Board.css'
 
 class Board extends Component {
   handleSquareClick = ({y,x}) => {
     const {focus, field} = this.props;
-    if(!focus && field[y][x])
-        this.props.changeFocus({focus: {y,x}})
+    if(!focus && field[y][x] && field[y][x].color === this.props.player)
+      this.props.changeFocus({focus: {y,x}})
+    else if(focus && field[y][x] === field[focus.y][focus.x]) {
+      this.props.changeFocus({focus: false})
+    }
     else if(focus && !field[y][x]) {
         const grid = [...field].map((row, rIdx) => {  
             if (rIdx === y) {
                 row = row.map((cell, cIdx) => {
                     if (cIdx === x) {
                         const piece = field[focus.y][focus.x];
+                        if(piece.color !== this.props.player) {
+                            return cell;
+                        }
                         // movement logic
                         switch(field[focus.y][focus.x].name) {
                             case 'rook':
@@ -52,6 +58,7 @@ class Board extends Component {
           if((x !== focus.x || y !== focus.y))
               grid[focus.y][focus.x] = null;
           this.props.changeFocus({focus: false})
+          this.props.changePlayer(this.props.player === 'black' ? 'white' : 'black')
           this.props.changeField(grid)
         }
     }
@@ -84,8 +91,9 @@ class Board extends Component {
 
 const mapStateToProps = state => ({
     field: getField(state),
-    focus: getFocus(state)
+    focus: getFocus(state),
+    player: getPlayer(state)
 });
 
 
-export default connect (mapStateToProps, { changeField, changeFocus })(Board);
+export default connect (mapStateToProps, { changeField, changeFocus, changePlayer })(Board);
