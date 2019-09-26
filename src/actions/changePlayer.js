@@ -1,8 +1,8 @@
-import { CHANGE_PLAYER } from '../constants';
+import { CHANGE_PLAYER } from "../constants";
 
 export function changePlayer(player) {
-    return {
-      type: CHANGE_PLAYER,
-      player
-    }
+  return {
+    type: CHANGE_PLAYER,
+    player
+  };
 }

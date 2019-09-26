@@ -1,12 +1,12 @@
-import { CHANGE_FOCUS } from '../constants';
+import { CHANGE_FOCUS } from "../constants";
 
 export const initialFocusState = false;
 
 export const focus = (state = initialFocusState, action) => {
   switch (action.type) {
     case CHANGE_FOCUS:
-      return action.focus
+      return action.focus;
     default:
-      return state
+      return state;
   }
-}
+};

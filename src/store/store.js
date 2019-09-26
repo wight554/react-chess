@@ -1,9 +1,19 @@
-import { createStore, combineReducers } from 'redux';
-import { field, focus, player, initialFieldState, initialFocusState, initialPlayerState } from '../reducers';
+import { createStore, combineReducers } from "redux";
+import {
+  field,
+  focus,
+  moves,
+  player,
+  initialFieldState,
+  initialFocusState,
+  initialMovesState,
+  initialPlayerState
+} from "../reducers";
 
 const initialStoreState = {
   field: initialFieldState,
   focus: initialFocusState,
+  moves: initialMovesState,
   player: initialPlayerState
 };
 
@@ -11,6 +21,7 @@ const store = createStore(
   combineReducers({
     field,
     focus,
+    moves,
     player
   }),
   initialStoreState,
@@ -18,4 +29,3 @@ const store = createStore(
 );
 
 export default store;
-

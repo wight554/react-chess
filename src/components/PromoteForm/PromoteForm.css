@@ -1,0 +1,4 @@
+.PromoteForm {
+  display: flex;
+  flex-direction: column;
+}

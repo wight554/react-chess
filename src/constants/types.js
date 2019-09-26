@@ -1,3 +1,4 @@
-export const CHANGE_FIELD = 'CHANGE_FIELD';
-export const CHANGE_FOCUS = 'CHANGE_FOCUS';
-export const CHANGE_PLAYER = 'CHANGE_PLAYER';
+export const CHANGE_FIELD = "CHANGE_FIELD";
+export const CHANGE_FOCUS = "CHANGE_FOCUS";
+export const CHANGE_MOVES = "CHANGE_MOVES";
+export const CHANGE_PLAYER = "CHANGE_PLAYER";

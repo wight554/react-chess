@@ -5,11 +5,11 @@ import pawn from "../assets/pieces/pawn.svg";
 import queen from "../assets/pieces/queen.svg";
 import rook from "../assets/pieces/rook.svg";
 
-export const piecesImg = {
-    bishop,
-    king,
-    knight,
-    pawn,
-    queen,
-    rook
-}
+export const images = {
+  bishop,
+  king,
+  knight,
+  pawn,
+  queen,
+  rook
+};

@@ -1,3 +1,9 @@
-export const darkGrey = '#424242'
-export const lightGrey = '#bdbdbd'
-export const red = '#c62828'
+export const black = "black";
+export const white = "white";
+export const darkGrey = "#424242";
+export const lightGrey = "#bdbdbd";
+export const blue = "#1565c0";
+export const green = "#2e7d32";
+export const red = "#c62828";
+export const pink = "#ad1457";
+export const teal = "#00695c";
