@@ -489,7 +489,7 @@ const getKingInfo = pieces => {
   return false;
 };
 
-const checkKingInBeatableMoves = ({ y, x }, moves) => {
+const checkPieceInBeatableMoves = ({ y, x }, moves) => {
   for (let i = 0; i < moves.length; i++) {
     if (y === moves[i].y && x === moves[i].x) return true;
   }
@@ -501,7 +501,7 @@ const checkCheck = (field, player) => {
   const opponentPieces = getPlayerPieces(field, player);
   const opponentMoves = getAllPlayerMoves(field, opponentPieces);
   const checked = kingInfo
-    ? checkKingInBeatableMoves(kingInfo, getBeatableMoves(opponentMoves))
+    ? checkPieceInBeatableMoves(kingInfo, getBeatableMoves(opponentMoves))
     : false;
   return checked;
 };
@@ -527,11 +527,7 @@ const getSavableMoves = (field, player) => {
         }
       }
       // beater can be beated as well
-      beaterSavableMoves.push({
-        y: beatableMoves[i].mover.y,
-        x: beatableMoves[i].mover.x,
-        beater: true
-      });
+      beaterSavableMoves.push(beatableMoves[i].mover);
     }
   }
   return beaterSavableMoves;
@@ -558,6 +554,29 @@ const getSaviors = (field, player) => {
   }
   // king can save himself by beating beater
   return saviors;
+};
+
+const getOppositeDirection = direction => {
+  switch (direction) {
+    case top:
+      return bottom;
+    case bottom:
+      return top;
+    case left:
+      return right;
+    case right:
+      return left;
+    case topLeft:
+      return bottomRight;
+    case topRight:
+      return bottomLeft;
+    case bottomLeft:
+      return topRight;
+    case bottomRight:
+      return topLeft;
+    default:
+      return direction;
+  }
 };
 
 class Board extends Component {
@@ -638,15 +657,49 @@ class Board extends Component {
               savior = saviors[i].name;
             }
           }
+          changeFocus({ y, x });
+          const saviorMoves = possibleDirections(field, { y, x });
+          const savableMoves = getSavableMoves(field, opponentColor(player));
           if (savior === king) {
             // for king we can go only to betable cells
-            const kingMoves = possibleDirections(field, { y, x });
-            changeFocus({ y, x });
-            changeMoves(kingMoves.filter(move => move.beatable));
+            let newMoves = saviorMoves.filter(function(obj) {
+              return !savableMoves.some(function(obj2) {
+                return (
+                  (obj.y === obj2.y && obj.x === obj2.x) ||
+                  (obj.route === obj2.route ||
+                    obj.route === getOppositeDirection(obj2.route))
+                );
+              });
+            });
+            // latest savable move is potentially beatable
+            if (savableMoves[savableMoves.length - 1].name) {
+              const checkerMoves = getPieceMoves(
+                field,
+                savableMoves[savableMoves.length - 1]
+              );
+              const checkerBeatable = checkPieceInBeatableMoves(
+                savableMoves[savableMoves.length - 1],
+                saviorMoves
+              );
+              if (checkerBeatable) {
+                newMoves = newMoves.filter(function(obj) {
+                  return !checkerMoves.some(function(obj2) {
+                    return (
+                      (obj.y === obj2.y && obj.x === obj2.x) ||
+                      (obj.route === obj2.route ||
+                        obj.route === getOppositeDirection(obj2.route))
+                    );
+                  });
+                });
+              }
+            }
+            for (let i = 0; i < saviorMoves.length; i++) {
+              if (saviorMoves[i].beatable) {
+                newMoves.push(saviorMoves[i]);
+              }
+            }
+            changeMoves(newMoves);
           } else if (savior) {
-            changeFocus({ y, x });
-            const saviorMoves = possibleDirections(field, { y, x });
-            const savableMoves = getSavableMoves(field, opponentColor(player));
             const newMoves = [];
             for (let i = 0; i < savableMoves.length; i++) {
               for (let j = 0; j < saviorMoves.length; j++) {
