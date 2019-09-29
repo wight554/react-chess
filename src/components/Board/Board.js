@@ -682,11 +682,6 @@ class Board extends Component {
                 field,
                 savableMoves[savableMoves.length - 1]
               );
-              const checkerBeatable = checkPieceInBeatableMoves(
-                savableMoves[savableMoves.length - 1],
-                saviorMoves
-              );
-              if (checkerBeatable) {
                 newMoves = newMoves.filter(function(obj) {
                   return !checkerMoves.some(function(obj2) {
                     return (
@@ -696,7 +691,6 @@ class Board extends Component {
                     );
                   });
                 });
-              }
             }
             for (let i = 0; i < saviorMoves.length; i++) {
               if (saviorMoves[i].beatable) {
