@@ -672,7 +672,10 @@ class Board extends Component {
               });
             });
             // latest savable move is potentially beatable
-            if (savableMoves[savableMoves.length - 1].name) {
+            if (
+              savableMoves[savableMoves.length - 1].name &&
+              savableMoves[savableMoves.length - 1].name !== pawn
+            ) {
               const checkerMoves = getPieceMoves(
                 field,
                 savableMoves[savableMoves.length - 1]
