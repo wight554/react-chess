@@ -601,6 +601,7 @@ class Board extends Component {
   };
   endGame = player => {
     this.setState({ winner: player });
+    this.openModal();
   };
   handlePromotePawn = choice => {
     const { promote } = this.state;
@@ -643,7 +644,8 @@ class Board extends Component {
       changeMoves,
       changePlayer
     } = this.props;
-    const { saviors } = this.state;
+    const { saviors, winner } = this.state;
+    if (winner) return;
     if (
       (!focus || field[y][x]) &&
       (field[y][x] && field[y][x].color === player)
@@ -873,25 +875,25 @@ class Board extends Component {
   render() {
     return (
       <Fragment>
-        {!this.state.winner ? (
-          <Fragment>
-            <div>Turn: {this.props.player}</div>
-            <div className="Board">
-              <Modal
-                isOpen={this.state.modalIsOpen}
-                onAfterOpen={this.afterOpenModal}
-                onRequestClose={this.closeModal}
-                contentLabel="Piece Modal"
-                style={customStyles}
-              >
+        <Fragment>
+          <div>Turn: {this.props.player}</div>
+          <div className="Board">
+            <Modal
+              isOpen={this.state.modalIsOpen}
+              onAfterOpen={this.afterOpenModal}
+              onRequestClose={this.closeModal}
+              contentLabel="Piece Modal"
+              style={customStyles}
+            >
+              {!this.state.winner ? (
                 <PromoteForm handlePromotePawn={this.handlePromotePawn} />
-              </Modal>
-              {this.renderField()}
-            </div>
-          </Fragment>
-        ) : (
-          <h1>Game over, winner: {this.state.winner}</h1>
-        )}
+              ) : (
+                <h1>Game over, winner: {this.state.winner}</h1>
+              )}
+            </Modal>
+            {this.renderField()}
+          </div>
+        </Fragment>
       </Fragment>
     );
   }
