@@ -472,7 +472,7 @@ const getPieceBeatableMoves = moves => {
 const getBeatableMoves = moves => {
   const beatableMoves = [];
   for (let i = 0; i < moves.length; i++) {
-    for (let j = 0; j < moves.length; j++) {
+    for (let j = 0; j < moves[i].length; j++) {
       if (moves[i][j] && moves[i][j].beatable) beatableMoves.push(moves[i][j]);
     }
   }
@@ -500,8 +500,9 @@ const checkCheck = (field, player) => {
   const kingInfo = getKingInfo(getPlayerPieces(field, opponentColor(player)));
   const opponentPieces = getPlayerPieces(field, player);
   const opponentMoves = getAllPlayerMoves(field, opponentPieces);
+  const opponentBeatableMoves = getBeatableMoves(opponentMoves);
   const checked = kingInfo
-    ? checkPieceInBeatableMoves(kingInfo, getBeatableMoves(opponentMoves))
+    ? checkPieceInBeatableMoves(kingInfo, opponentBeatableMoves)
     : false;
   return checked;
 };
@@ -673,6 +674,7 @@ class Board extends Component {
                 );
               });
             });
+
             // latest savable move is potentially beatable
             if (
               savableMoves[savableMoves.length - 1].name &&
