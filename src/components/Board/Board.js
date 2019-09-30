@@ -111,6 +111,37 @@ class Board extends Component {
     } = this.props;
     const { saviors, winner } = this.state;
     if (winner) return;
+    const newFieldForMove = (x, y) => {
+      const newField = [...field].map((row, rIdx) => {
+        if (rIdx === y) {
+          row = row.map((cell, cIdx) => {
+            if (cIdx === x) {
+              const piece = field[focus.y][focus.x];
+              // movement logic
+              if (checkPromote(moves, { x, y })) {
+                this.openModal();
+                this.setState({
+                  promote: {
+                    x,
+                    y
+                  }
+                });
+              }
+              if (checkCell(moves, { x, y })) {
+                cell = piece;
+              }
+              if (cell && piece.firstStep) cell.firstStep = false;
+            }
+            return cell;
+          });
+        }
+        return row;
+      });
+      if (newField[y][x] !== field[y][x]) {
+        if (x !== focus.x || y !== focus.y) newField[focus.y][focus.x] = null;
+      }
+      return newField;
+    };
     if (
       (!focus || field[y][x]) &&
       (field[y][x] && field[y][x].color === player)
@@ -149,8 +180,11 @@ class Board extends Component {
               newMoves = newMoves.filter(
                 o =>
                   !checkerMoves.some(o2 => {
-                    if (kingBeatMove) return o.route === o2.route;
-                    return o.x === o2.x && o.y === o2.y;
+                    return (
+                      (o.x === o2.x && o.y === o2.y) ||
+                      (kingBeatMove &&
+                        getOppositeDirection(kingBeatMove.route) === o.route)
+                    );
                   })
               );
             }
@@ -179,33 +213,8 @@ class Board extends Component {
         changeMoves([]);
       }
     } else if (focus && (!field[y][x] || field[y][x].color !== player)) {
-      const grid = [...field].map((row, rIdx) => {
-        if (rIdx === y) {
-          row = row.map((cell, cIdx) => {
-            if (cIdx === x) {
-              const piece = field[focus.y][focus.x];
-              // movement logic
-              if (checkPromote(moves, { x, y })) {
-                this.openModal();
-                this.setState({
-                  promote: {
-                    x,
-                    y
-                  }
-                });
-              }
-              if (checkCell(moves, { x, y })) {
-                cell = piece;
-              }
-              if (cell && piece.firstStep) cell.firstStep = false;
-            }
-            return cell;
-          });
-        }
-        return row;
-      });
+      const grid = newFieldForMove(x, y);
       if (grid[y][x] !== field[y][x]) {
-        if (x !== focus.x || y !== focus.y) grid[focus.y][focus.x] = null;
         changeFocus(false);
         changeMoves([]);
         changePlayer(getOpponentColor(player));
