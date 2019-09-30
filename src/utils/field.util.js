@@ -252,6 +252,7 @@ export const possibleDirections = (field, { x, y }) => {
                 piece: field[y][i].name,
                 mover: { ...field[y][x], y, x }
               });
+              break;
             } else break;
           }
         }
@@ -262,6 +263,7 @@ export const possibleDirections = (field, { x, y }) => {
         else maxStep = x < y ? x : y;
         for (let i = 1; i <= maxStep; i++) {
           if (!field[y - i]) break;
+          if (x - i < 0) break;
           if (!field[y - i][x - i] && name !== pawn) {
             moves.push({
               route: d,
@@ -304,6 +306,7 @@ export const possibleDirections = (field, { x, y }) => {
         else maxStep = x < y ? field.length - 1 - x : field.length - 1 - y;
         for (let i = 1; i <= maxStep; i++) {
           if (!field[y - i]) break;
+          if (x + i >= field.length) break;
           if (!field[y - i][x + i] && name !== pawn)
             moves.push({
               route: d,
@@ -384,6 +387,7 @@ export const possibleDirections = (field, { x, y }) => {
             x < y ? field.length - 1 - x : field.length - 1 - y;
         for (let i = 1; i <= maxStep; i++) {
           if (!field[y + i]) break;
+          if (x - i < 0) break;
           if (!field[y + i][x - i] && name !== pawn)
             moves.push({
               route: d,
