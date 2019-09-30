@@ -104,34 +104,40 @@ class Board extends Component {
     } = this.props;
     const { saviors, winner } = this.state;
     if (winner) return;
-    const newFieldForMove = (y, x, focus, moves) => {
+    const newFieldForMove = (testY, testX, focus, moves) => {
       const newField = JSON.parse(JSON.stringify(field)).map((row, rIdx) => {
-        if (rIdx === y) {
+        if (rIdx === testY) {
           row = row.map((cell, cIdx) => {
-            if (cIdx === x) {
+            if (cIdx === testX) {
               const piece = field[focus.y][focus.x];
               // movement logic
-              if (checkPromote(moves, { x, y })) {
-                this.openModal();
-                this.setState({
-                  promote: {
-                    x,
-                    y
-                  }
-                });
+              if (x === testX && y === testY) {
+                if (checkPromote(moves, { x: testX, y: testY })) {
+                  this.openModal();
+                  this.setState({
+                    promote: {
+                      x: testX,
+                      y: testY
+                    }
+                  });
+                }
               }
-              if (checkCell(moves, { x, y })) {
+              if (checkCell(moves, { x: testX, y: testY })) {
                 cell = JSON.parse(JSON.stringify(piece));
+                if (cell && piece.firstStep) cell.firstStep = false;
               }
-              if (cell && piece.firstStep) cell.firstStep = false;
             }
             return cell;
           });
         }
         return row;
       });
-      if (newField[y][x] !== field[y][x]) {
-        if (x !== focus.x || y !== focus.y) newField[focus.y][focus.x] = null;
+      if (
+        JSON.stringify(newField[testY][testX]) !==
+        JSON.stringify(field[testY][testX])
+      ) {
+        if (testX !== focus.x || testY !== focus.y)
+          newField[focus.y][focus.x] = null;
       }
       return newField;
     };
@@ -145,13 +151,13 @@ class Board extends Component {
           let savior = false;
           for (let i = 0; i < saviors.length; i++) {
             if (saviors[i].x === x && saviors[i].y === y) {
-              savior = saviors[i].name;
+              savior = saviors[i];
             }
           }
           changeFocus({ y, x });
           const saviorMoves = possibleDirections(field, { y, x });
           const savableMoves = getSavableMoves(field, getOpponentColor(player));
-          if (savior === king) {
+          if (savior.name === king) {
             let kingBeatMove = false;
             for (let i = 0; i < saviorMoves.length; i++) {
               if (saviorMoves[i].beatable) {
@@ -182,7 +188,14 @@ class Board extends Component {
               );
             }
             if (kingBeatMove) newMoves.push(kingBeatMove);
-            changeMoves(newMoves);
+            newMoves = newMoves.filter(m => {
+              return !checkCheck(
+                newFieldForMove(m.y, m.x, { y, x }, newMoves),
+                getOpponentColor(player)
+              );
+            });
+            if (newMoves.length || saviors.length) changeMoves(newMoves);
+            else this.endGame(getOpponentColor(player));
           } else if (savior) {
             const newMoves = [];
             for (let i = 0; i < savableMoves.length; i++) {
@@ -195,19 +208,27 @@ class Board extends Component {
                 }
               }
             }
-            changeMoves(newMoves);
+            newMoves = newMoves.filter(m => {
+              return !checkCheck(
+                newFieldForMove(m.y, m.x, { y, x }, newMoves),
+                getOpponentColor(player)
+              );
+            });
+            if (newMoves.length || saviors.length) changeMoves(newMoves);
+            else this.endGame(getOpponentColor(player));
           }
         } else {
           let newMoves = possibleDirections(field, { y, x });
-          newMoves = newMoves.filter(
-            m =>
-              !checkCheck(
-                newFieldForMove(m.y, m.x, { y, x }, newMoves),
-                getOpponentColor(player)
-              )
-          );
-          if (newMoves.length) changeFocus({ y, x });
-          changeMoves(newMoves);
+          newMoves = newMoves.filter(m => {
+            return !checkCheck(
+              newFieldForMove(m.y, m.x, { y, x }, newMoves),
+              getOpponentColor(player)
+            );
+          });
+          if (newMoves.length) {
+            changeFocus({ y, x });
+            changeMoves(newMoves);
+          }
         }
       } else {
         changeFocus(false);
@@ -215,7 +236,7 @@ class Board extends Component {
       }
     } else if (focus && (!field[y][x] || field[y][x].color !== player)) {
       const grid = newFieldForMove(y, x, focus, moves);
-      if (grid[y][x] !== field[y][x]) {
+      if (JSON.stringify(grid[y][x]) !== JSON.stringify(field[y][x])) {
         changeFocus(false);
         changeMoves([]);
         changePlayer(getOpponentColor(player));

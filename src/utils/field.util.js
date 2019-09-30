@@ -233,26 +233,27 @@ export const possibleDirections = (field, { x, y }) => {
       case right: {
         if (name === king) maxStep = 1;
         else maxStep = field.length - x;
-        for (let i = x + 1; i < x + maxStep; i++) {
-          if (!field[y][i])
-            moves.push({
-              route: d,
-              y: y,
-              x: i,
-              beatable: false,
-              mover: { ...field[y][x], y, x }
-            });
-          else if (field[y][i].color !== color) {
-            moves.push({
-              route: d,
-              y: y,
-              x: i,
-              beatable: true,
-              piece: field[y][i].name,
-              mover: { ...field[y][x], y, x }
-            });
-            break;
-          } else break;
+        for (let i = x + 1; i <= x + maxStep; i++) {
+          if (i < field.length) {
+            if (!field[y][i])
+              moves.push({
+                route: d,
+                y: y,
+                x: i,
+                beatable: false,
+                mover: { ...field[y][x], y, x }
+              });
+            else if (field[y][i].color !== color) {
+              moves.push({
+                route: d,
+                y: y,
+                x: i,
+                beatable: true,
+                piece: field[y][i].name,
+                mover: { ...field[y][x], y, x }
+              });
+            } else break;
+          }
         }
         break;
       }
