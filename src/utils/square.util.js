@@ -1,4 +1,5 @@
-import { darkGrey, lightGrey } from "../constants";
+import { colors } from "../constants";
+const { darkGrey, lightGrey } = colors;
 
 export function getCellColor({ x, y, color }) {
   if (color) return color;

@@ -1,6 +1,8 @@
-export const bishop = "bishop";
-export const king = "king";
-export const knight = "knight";
-export const pawn = "pawn";
-export const queen = "queen";
-export const rook = "rook";
+export const pieces = {
+  bishop: "bishop",
+  king: "king",
+  knight: "knight",
+  pawn: "pawn",
+  queen: "queen",
+  rook: "rook"
+};

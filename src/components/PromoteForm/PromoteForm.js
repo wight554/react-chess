@@ -1,11 +1,13 @@
 import React, { Component } from "react";
-import { bishop, knight, queen, rook } from "../../constants";
+import { pieces } from "../../constants";
 import "./PromoteForm.css";
+
+const { bishop, knight, queen, pawn, rook } = pieces;
 
 class PromoteForm extends Component {
   constructor(props) {
     super(props);
-    this.state = { selectedOption: "pawn" };
+    this.state = { selectedOption: pawn };
   }
   handleChange = event => {
     this.setState({

@@ -1,14 +1,26 @@
-export const top = "top";
-export const bottom = "bottom";
-export const left = "left";
-export const right = "right";
-export const topLeft = "topLeft";
-export const topRight = "topRight";
-export const bottomLeft = "bottomLeft";
-export const bottomRight = "bottomRight";
-export const knightL = "knightL";
+const top = "top";
+const bottom = "bottom";
+const left = "left";
+const right = "right";
+const topLeft = "topLeft";
+const topRight = "topRight";
+const bottomLeft = "bottomLeft";
+const bottomRight = "bottomRight";
+const knightL = "knightL";
 
 export const directions = {
+  top,
+  bottom,
+  left,
+  right,
+  topLeft,
+  topRight,
+  bottomLeft,
+  bottomRight,
+  knightL
+};
+
+export const piecesDirections = {
   rook: [top, bottom, left, right],
   knight: [knightL],
   king: [top, bottom, left, right, topLeft, topRight, bottomLeft, bottomRight],

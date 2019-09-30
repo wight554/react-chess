@@ -1,16 +1,12 @@
 import { createStore, combineReducers } from "redux";
+import { fieldReducers, pieceReducers, playerReducers } from "../reducers";
 import {
-  check,
-  field,
-  focus,
-  moves,
-  player,
   initialCheckState,
   initialFieldState,
   initialFocusState,
   initialMovesState,
   initialPlayerState
-} from "../reducers";
+} from "../constants/actions";
 
 const initialStoreState = {
   check: initialCheckState,
@@ -19,6 +15,10 @@ const initialStoreState = {
   moves: initialMovesState,
   player: initialPlayerState
 };
+
+const { field } = fieldReducers;
+const { focus, moves } = pieceReducers;
+const { check, player } = playerReducers;
 
 const store = createStore(
   combineReducers({
