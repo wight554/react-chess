@@ -75,17 +75,10 @@ class Board extends Component {
     newField[promote.y][promote.x].name = choice;
     newField[promote.y][promote.x].directions = piecesDirections[choice];
     changeField(newField);
-    let kingInfo = getKingInfo(
-      getPlayerPieces(newField, getOpponentColor(player))
-    );
-    let checked = checkCheck(newField, player);
-    // if check check happened after move, it's checkmate
-    if (!checked) {
-      kingInfo = getKingInfo(getPlayerPieces(newField, player));
-      checked = checkCheck(newField, getOpponentColor(player));
-    }
+    let kingInfo = getKingInfo(getPlayerPieces(newField, player));
+    let checked = checkCheck(newField, getOpponentColor(player));
     if (checked) {
-      const saviors = getSaviors(newField, player);
+      const saviors = getSaviors(newField, getOpponentColor(player));
       // if there are cells that can be covered
       if (saviors.length) {
         this.setSaviors(saviors);
