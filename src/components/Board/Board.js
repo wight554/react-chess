@@ -197,7 +197,7 @@ class Board extends Component {
             if (newMoves.length || saviors.length) changeMoves(newMoves);
             else this.endGame(getOpponentColor(player));
           } else if (savior) {
-            const newMoves = [];
+            let newMoves = [];
             for (let i = 0; i < savableMoves.length; i++) {
               for (let j = 0; j < saviorMoves.length; j++) {
                 if (
