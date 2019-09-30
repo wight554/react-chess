@@ -233,7 +233,7 @@ export const possibleDirections = (field, { x, y }) => {
       case right: {
         if (name === king) maxStep = 1;
         else maxStep = field.length - x;
-        for (let i = x + 1; i <= x + maxStep; i++) {
+        for (let i = x + 1; i < x + maxStep; i++) {
           if (!field[y][i])
             moves.push({
               route: d,

@@ -104,8 +104,8 @@ class Board extends Component {
     } = this.props;
     const { saviors, winner } = this.state;
     if (winner) return;
-    const newFieldForMove = (x, y) => {
-      const newField = [...field].map((row, rIdx) => {
+    const newFieldForMove = (y, x, focus, moves) => {
+      const newField = JSON.parse(JSON.stringify(field)).map((row, rIdx) => {
         if (rIdx === y) {
           row = row.map((cell, cIdx) => {
             if (cIdx === x) {
@@ -121,7 +121,7 @@ class Board extends Component {
                 });
               }
               if (checkCell(moves, { x, y })) {
-                cell = piece;
+                cell = JSON.parse(JSON.stringify(piece));
               }
               if (cell && piece.firstStep) cell.firstStep = false;
             }
@@ -198,15 +198,23 @@ class Board extends Component {
             changeMoves(newMoves);
           }
         } else {
-          changeFocus({ y, x });
-          changeMoves(possibleDirections(field, { y, x }));
+          let newMoves = possibleDirections(field, { y, x });
+          newMoves = newMoves.filter(
+            m =>
+              !checkCheck(
+                newFieldForMove(m.y, m.x, { y, x }, newMoves),
+                getOpponentColor(player)
+              )
+          );
+          if (newMoves.length) changeFocus({ y, x });
+          changeMoves(newMoves);
         }
       } else {
         changeFocus(false);
         changeMoves([]);
       }
     } else if (focus && (!field[y][x] || field[y][x].color !== player)) {
-      const grid = newFieldForMove(x, y);
+      const grid = newFieldForMove(y, x, focus, moves);
       if (grid[y][x] !== field[y][x]) {
         changeFocus(false);
         changeMoves([]);
