@@ -482,10 +482,14 @@ export const getPlayerPieces = (field, color) => {
   return pieces;
 };
 
+export const getPieceMoves = (field, piece) => {
+  return possibleDirections(field, piece);
+};
+
 export const getAllPlayerMoves = (field, pieces) => {
   const allMoves = [];
   for (let i = 0; i < pieces.length; i++) {
-    const directions = possibleDirections(field, {
+    const directions = getPieceMoves(field, {
       x: pieces[i].x,
       y: pieces[i].y,
       mover: pieces[i].name
@@ -493,10 +497,6 @@ export const getAllPlayerMoves = (field, pieces) => {
     if (directions.length) allMoves.push(directions);
   }
   return allMoves;
-};
-
-export const getPieceMoves = (field, piece) => {
-  return possibleDirections(field, piece);
 };
 
 export const getPieceBeatableMoves = moves => {
@@ -560,7 +560,7 @@ export const getSavableMoves = (field, player) => {
         // push coverable cells
         if (
           !beaterMoves[j].beatable &&
-          // can't cover knight (FIXME)
+          // can't cover knight
           beaterMoves[j].route !== knightL &&
           beaterMoves[j].route === kingBeatRoute
         ) {
@@ -574,13 +574,9 @@ export const getSavableMoves = (field, player) => {
   return beaterSavableMoves;
 };
 
-export const getSaviors = (field, player) => {
+export const getSaviors = (beaterSavableMoves, ownMoves) => {
   const saviors = [];
-  const beaterSavableMoves = getSavableMoves(field, player);
-  const ownMoves = getAllPlayerMoves(
-    field,
-    getPlayerPieces(field, getOpponentColor(player))
-  );
+  if (!ownMoves.length) return saviors;
   for (let i = 0; i < ownMoves.length; i++) {
     for (let j = 0; j < ownMoves[i].length; j++) {
       for (let k = 0; k < beaterSavableMoves.length; k++) {

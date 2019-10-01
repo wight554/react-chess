@@ -18,12 +18,12 @@ import {
   getOpponentColor,
   getPlayerPieces,
   getPieceMoves,
-  getPieceBeatableMoves,
   getKingInfo,
   checkCheck,
   getSavableMoves,
   getSaviors,
-  getOppositeDirection
+  getOppositeDirection,
+  getAllPlayerMoves
 } from "../../utils";
 import "./Board.css";
 import PromoteForm from "../PromoteForm";
@@ -68,6 +68,39 @@ class Board extends Component {
     this.setState({ winner: player });
     this.openModal();
   };
+  newFieldForMove = (field, y, x, focus, moves, updateFieldState) => {
+    const newField = JSON.parse(JSON.stringify(field)).map((row, rIdx) => {
+      if (rIdx === y) {
+        row = row.map((cell, cIdx) => {
+          if (cIdx === x) {
+            const piece = field[focus.y][focus.x];
+            // movement logic
+            if (updateFieldState) {
+              if (checkPromote(moves, { x: x, y: y })) {
+                this.openModal();
+                this.setState({
+                  promote: {
+                    x: x,
+                    y: y
+                  }
+                });
+              }
+            }
+            if (checkCell(moves, { x: x, y: y })) {
+              cell = JSON.parse(JSON.stringify(piece));
+              if (cell && piece.firstStep) cell.firstStep = false;
+            }
+          }
+          return cell;
+        });
+      }
+      return row;
+    });
+    if (JSON.stringify(newField[y][x]) !== JSON.stringify(field[y][x])) {
+      if (x !== focus.x || y !== focus.y) newField[focus.y][focus.x] = null;
+    }
+    return newField;
+  };
   handlePromotePawn = choice => {
     const { promote } = this.state;
     const { field, changeField, changeCheck, player } = this.props;
@@ -75,18 +108,73 @@ class Board extends Component {
     newField[promote.y][promote.x].name = choice;
     newField[promote.y][promote.x].directions = piecesDirections[choice];
     changeField(newField);
-    let kingInfo = getKingInfo(getPlayerPieces(newField, player));
     let checked = checkCheck(newField, getOpponentColor(player));
     if (checked) {
-      const saviors = getSaviors(newField, getOpponentColor(player));
+      const beaterSavableMoves = getSavableMoves(
+        newField,
+        getOpponentColor(player)
+      );
+      let ownMoves = getAllPlayerMoves(
+        newField,
+        getPlayerPieces(newField, player)
+      );
+      for (let i = 0; i < ownMoves.length; i++) {
+        ownMoves[i] = ownMoves[i].filter(m => {
+          if (m.mover.name !== king) {
+            for (let i = 0; i < beaterSavableMoves.length; i++) {
+              if (
+                beaterSavableMoves[i].x === m.x &&
+                beaterSavableMoves[i].y === m.y
+              )
+                return true;
+            }
+            return !checkCheck(
+              this.newFieldForMove(
+                newField,
+                m.y,
+                m.x,
+                { y: promote.y, x: promote.x },
+                ownMoves[i],
+                false
+              ),
+              getOpponentColor(player)
+            );
+          } else return true;
+        });
+      }
+      const saviors = getSaviors(beaterSavableMoves, ownMoves);
       // if there are cells that can be covered
       if (saviors.length) {
-        this.setSaviors(saviors);
+        // the savior is king
+        if (saviors.length === 1 && saviors[0].name === king) {
+          // if king is the only savior and can't move it's checkmate
+          let kingMoves = getPieceMoves(newField, saviors[0]);
+          kingMoves = kingMoves.filter(m => {
+            return !checkCheck(
+              this.newFieldForMove(
+                newField,
+                m.y,
+                m.x,
+                { y: saviors[0].y, x: saviors[0].x },
+                kingMoves,
+                false
+              ),
+              getOpponentColor(player)
+            );
+          });
+          if (!kingMoves.length) {
+            this.endGame(getOpponentColor(player));
+          } else {
+            this.setSaviors(saviors);
+          }
+        } else {
+          this.setSaviors(saviors);
+        }
       } else {
         // checkmate
-        this.endGame(getOpponentColor(kingInfo.color));
+        this.endGame(getOpponentColor(player));
       }
-      changeCheck(kingInfo.color);
+      changeCheck(player);
     }
     this.closeModal();
   };
@@ -104,43 +192,6 @@ class Board extends Component {
     } = this.props;
     const { saviors, winner } = this.state;
     if (winner) return;
-    const newFieldForMove = (testY, testX, focus, moves) => {
-      const newField = JSON.parse(JSON.stringify(field)).map((row, rIdx) => {
-        if (rIdx === testY) {
-          row = row.map((cell, cIdx) => {
-            if (cIdx === testX) {
-              const piece = field[focus.y][focus.x];
-              // movement logic
-              if (x === testX && y === testY) {
-                if (checkPromote(moves, { x: testX, y: testY })) {
-                  this.openModal();
-                  this.setState({
-                    promote: {
-                      x: testX,
-                      y: testY
-                    }
-                  });
-                }
-              }
-              if (checkCell(moves, { x: testX, y: testY })) {
-                cell = JSON.parse(JSON.stringify(piece));
-                if (cell && piece.firstStep) cell.firstStep = false;
-              }
-            }
-            return cell;
-          });
-        }
-        return row;
-      });
-      if (
-        JSON.stringify(newField[testY][testX]) !==
-        JSON.stringify(field[testY][testX])
-      ) {
-        if (testX !== focus.x || testY !== focus.y)
-          newField[focus.y][focus.x] = null;
-      }
-      return newField;
-    };
     if (
       (!focus || field[y][x]) &&
       (field[y][x] && field[y][x].color === player)
@@ -190,12 +241,18 @@ class Board extends Component {
             if (kingBeatMove) newMoves.push(kingBeatMove);
             newMoves = newMoves.filter(m => {
               return !checkCheck(
-                newFieldForMove(m.y, m.x, { y, x }, newMoves),
+                this.newFieldForMove(
+                  field,
+                  m.y,
+                  m.x,
+                  { y, x },
+                  newMoves,
+                  false
+                ),
                 getOpponentColor(player)
               );
             });
             if (newMoves.length || saviors.length) changeMoves(newMoves);
-            else this.endGame(getOpponentColor(player));
           } else if (savior) {
             let newMoves = [];
             for (let i = 0; i < savableMoves.length; i++) {
@@ -210,18 +267,24 @@ class Board extends Component {
             }
             newMoves = newMoves.filter(m => {
               return !checkCheck(
-                newFieldForMove(m.y, m.x, { y, x }, newMoves),
+                this.newFieldForMove(
+                  field,
+                  m.y,
+                  m.x,
+                  { y, x },
+                  newMoves,
+                  false
+                ),
                 getOpponentColor(player)
               );
             });
             if (newMoves.length || saviors.length) changeMoves(newMoves);
-            else this.endGame(getOpponentColor(player));
           }
         } else {
           let newMoves = possibleDirections(field, { y, x });
           newMoves = newMoves.filter(m => {
             return !checkCheck(
-              newFieldForMove(m.y, m.x, { y, x }, newMoves),
+              this.newFieldForMove(field, m.y, m.x, { y, x }, newMoves, false),
               getOpponentColor(player)
             );
           });
@@ -235,54 +298,76 @@ class Board extends Component {
         changeMoves([]);
       }
     } else if (focus && (!field[y][x] || field[y][x].color !== player)) {
-      const grid = newFieldForMove(y, x, focus, moves);
+      const grid = this.newFieldForMove(field, y, x, focus, moves, true);
       if (JSON.stringify(grid[y][x]) !== JSON.stringify(field[y][x])) {
         changeFocus(false);
         changeMoves([]);
         changePlayer(getOpponentColor(player));
         changeField(grid);
-        let kingInfo = getKingInfo(
-          getPlayerPieces(grid, getOpponentColor(player))
-        );
         let checked = checkCheck(grid, player);
-        // if check check happened after move, it's checkmate
-        if (!checked) {
-          kingInfo = getKingInfo(getPlayerPieces(grid, player));
-          checked = checkCheck(grid, getOpponentColor(player));
-        }
         if (checked) {
-          const saviors = getSaviors(grid, player);
-          let kingIsSavior = false;
-          for (let i = 0; i < saviors.length; i++) {
-            if (saviors[i].name === king) {
-              kingIsSavior = true;
-            }
+          const beaterSavableMoves = getSavableMoves(grid, player);
+          let ownMoves = getAllPlayerMoves(
+            grid,
+            getPlayerPieces(grid, getOpponentColor(player))
+          );
+          for (let i = 0; i < ownMoves.length; i++) {
+            ownMoves[i] = ownMoves[i].filter(m => {
+              if (m.mover.name !== king) {
+                for (let i = 0; i < beaterSavableMoves.length; i++) {
+                  if (
+                    beaterSavableMoves[i].x === m.x &&
+                    beaterSavableMoves[i].y === m.y
+                  )
+                    return true;
+                }
+                return !checkCheck(
+                  this.newFieldForMove(
+                    grid,
+                    m.y,
+                    m.x,
+                    { y, x },
+                    ownMoves[i],
+                    false
+                  ),
+                  player
+                );
+              } else return true;
+            });
           }
+          const saviors = getSaviors(beaterSavableMoves, ownMoves);
           // if there are cells that can be covered
           if (saviors.length) {
             // the savior is king
-            if (kingIsSavior) {
-              // king can beat the king
-              const kingMoves = getPieceMoves(
-                grid,
-                getKingInfo(getPlayerPieces(grid, player))
-              );
-              const kingBeatables = getPieceBeatableMoves(kingMoves);
-              for (let i = 0; i < kingBeatables.length; i++) {
-                if (kingBeatables[i].piece === king) {
-                  // the game is ended
-                  this.endGame(kingInfo.color);
-                }
+            if (saviors.length === 1 && saviors[0].name === king) {
+              // if king is the only savior and can't move it's checkmate
+              let kingMoves = getPieceMoves(grid, saviors[0]);
+              kingMoves = kingMoves.filter(m => {
+                return !checkCheck(
+                  this.newFieldForMove(
+                    grid,
+                    m.y,
+                    m.x,
+                    { y: saviors[0].y, x: saviors[0].x },
+                    kingMoves,
+                    false
+                  ),
+                  player
+                );
+              });
+              if (!kingMoves.length) {
+                this.endGame(player);
+              } else {
+                this.setSaviors(saviors);
               }
-              this.setSaviors(saviors);
             } else {
               this.setSaviors(saviors);
             }
           } else {
             // checkmate
-            this.endGame(getOpponentColor(kingInfo.color));
+            this.endGame(player);
           }
-          this.props.changeCheck(kingInfo.color);
+          this.props.changeCheck(getOpponentColor(player));
         } else {
           this.setSaviors([]);
           this.props.changeCheck("");
