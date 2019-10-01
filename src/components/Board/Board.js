@@ -205,9 +205,9 @@ class Board extends Component {
               savior = saviors[i];
             }
           }
-          changeFocus({ y, x });
           const saviorMoves = possibleDirections(field, { y, x });
           const savableMoves = getSavableMoves(field, getOpponentColor(player));
+          let newMoves = [];
           if (savior.name === king) {
             let kingBeatMove = false;
             for (let i = 0; i < saviorMoves.length; i++) {
@@ -215,7 +215,7 @@ class Board extends Component {
                 kingBeatMove = saviorMoves[i];
               }
             }
-            let newMoves = saviorMoves.filter(
+            newMoves = saviorMoves.filter(
               o =>
                 !savableMoves.some(
                   o2 => (o.x === o2.x && o.y === o2.y) || o.route === o2.route
@@ -252,9 +252,7 @@ class Board extends Component {
                 getOpponentColor(player)
               );
             });
-            if (newMoves.length || saviors.length) changeMoves(newMoves);
           } else if (savior) {
-            let newMoves = [];
             for (let i = 0; i < savableMoves.length; i++) {
               for (let j = 0; j < saviorMoves.length; j++) {
                 if (
@@ -278,7 +276,10 @@ class Board extends Component {
                 getOpponentColor(player)
               );
             });
-            if (newMoves.length || saviors.length) changeMoves(newMoves);
+          }
+          if (newMoves.length) {
+            changeMoves(newMoves);
+            changeFocus({ y, x });
           }
         } else {
           let newMoves = possibleDirections(field, { y, x });
