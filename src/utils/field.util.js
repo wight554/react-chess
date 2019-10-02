@@ -92,21 +92,11 @@ export const generateField = () => {
 };
 
 export const checkCell = (moves, { x, y }) => {
-  for (let i = 0; i < moves.length; i++) {
-    if (moves[i].x === x && moves[i].y === y) {
-      return true;
-    }
-  }
-  return false;
+  return moves.some(m => m.y === y && m.x === x);
 };
 
 export const checkPromote = (moves, { x, y }) => {
-  for (let i = 0; i < moves.length; i++) {
-    if (moves[i].x === x && moves[i].y === y && moves[i].promote) {
-      return true;
-    }
-  }
-  return false;
+  return moves.some(m => m.y === y && m.x === x && m.promote);
 };
 
 export const possibleDirections = (field, { x, y }) => {
@@ -426,7 +416,7 @@ export const possibleDirections = (field, { x, y }) => {
         const offset = [1, 2];
         const checkMove = (y, x, pY, pX) => {
           if (field[y]) {
-            if (field[y][x]) {
+            if (field[y][x] && x >= 0 && x < field.length) {
               if (field[y][x].color !== color)
                 moves.push({
                   route: d,
@@ -470,15 +460,15 @@ export const getOpponentColor = color => {
 
 export const getPlayerPieces = (field, color) => {
   const pieces = [];
-  for (let i = 0; i < field.length; i++) {
-    for (let j = 0; j < field.length; j++) {
-      if (field[i][j]) {
-        if (field[i][j].color === color) {
-          pieces.push({ ...field[i][j], x: j, y: i });
+  field.forEach((r, rIdx) => {
+    r.forEach((c, cIdx) => {
+      if (c) {
+        if (c.color === color) {
+          pieces.push({ ...c, y: rIdx, x: cIdx });
         }
       }
-    }
-  }
+    });
+  });
   return pieces;
 };
 
@@ -488,50 +478,46 @@ export const getPieceMoves = (field, piece) => {
 
 export const getAllPlayerMoves = (field, pieces) => {
   const allMoves = [];
-  for (let i = 0; i < pieces.length; i++) {
+  pieces.forEach(p => {
     const directions = getPieceMoves(field, {
-      x: pieces[i].x,
-      y: pieces[i].y,
-      mover: pieces[i].name
+      x: p.x,
+      y: p.y
     });
     if (directions.length) allMoves.push(directions);
-  }
+  });
   return allMoves;
 };
 
 export const getPieceBeatableMoves = moves => {
   const beatableMoves = [];
-  for (let i = 0; i < moves.length; i++) {
-    if (moves[i].beatable) beatableMoves.push(moves[i]);
-  }
+  moves.forEach(m => {
+    if (m.beatable) beatableMoves.push(m);
+  });
   return beatableMoves;
 };
 
 export const getBeatableMoves = moves => {
   const beatableMoves = [];
-  for (let i = 0; i < moves.length; i++) {
-    for (let j = 0; j < moves[i].length; j++) {
-      if (moves[i][j] && moves[i][j].beatable) beatableMoves.push(moves[i][j]);
-    }
-  }
+  moves.forEach(mArr => {
+    mArr.forEach(m => {
+      if (m && m.beatable) beatableMoves.push(m);
+    });
+  });
   return beatableMoves;
 };
 
 export const getKingInfo = playerPieces => {
-  for (let i = 0; i < playerPieces.length; i++) {
-    if (playerPieces[i].name === king) {
-      return playerPieces[i];
+  let kingInfo = false;
+  playerPieces.forEach(p => {
+    if (p.name === king) {
+      kingInfo = p;
     }
-  }
-  // return false if no info
-  return false;
+  });
+  return kingInfo;
 };
 
 export const checkPieceInBeatableMoves = ({ y, x }, moves) => {
-  for (let i = 0; i < moves.length; i++) {
-    if (y === moves[i].y && x === moves[i].x) return true;
-  }
-  return false;
+  return moves.some(m => m.y === y && m.x === x);
 };
 
 export const checkCheck = (field, player) => {
@@ -552,71 +538,42 @@ export const getSavableMoves = (field, player) => {
   const beatableMoves = getBeatableMoves(
     getAllPlayerMoves(field, getPlayerPieces(field, player))
   );
-  for (let i = 0; i < beatableMoves.length; i++) {
-    if (beatableMoves[i].piece === king) {
-      const kingBeatRoute = beatableMoves[i].route;
-      const beaterMoves = getPieceMoves(field, beatableMoves[i].mover);
-      for (let j = 0; j < beaterMoves.length; j++) {
+  beatableMoves.forEach(m => {
+    if (m.piece === king) {
+      const kingBeatRoute = m.route;
+      const beaterMoves = getPieceMoves(field, m.mover);
+      beaterMoves.forEach(m2 => {
         // push coverable cells
         if (
-          !beaterMoves[j].beatable &&
+          !m2.beatable &&
           // can't cover knight
-          beaterMoves[j].route !== knightL &&
-          beaterMoves[j].route === kingBeatRoute
+          m2.route !== knightL &&
+          m2.route === kingBeatRoute
         ) {
-          beaterSavableMoves.push(beaterMoves[j]);
+          beaterSavableMoves.push(m2);
         }
-      }
+      });
       // beater can be beated as well
-      beaterSavableMoves.push(beatableMoves[i].mover);
+      beaterSavableMoves.push(m.mover);
     }
-  }
+  });
   return beaterSavableMoves;
 };
 
 export const getSaviors = (beaterSavableMoves, ownMoves) => {
   const saviors = [];
   if (!ownMoves.length) return saviors;
-  for (let i = 0; i < ownMoves.length; i++) {
-    for (let j = 0; j < ownMoves[i].length; j++) {
-      for (let k = 0; k < beaterSavableMoves.length; k++) {
-        if (
-          beaterSavableMoves[k].name === knight &&
-          ownMoves[i][j].mover.name === king
-        ) {
-          saviors.push(ownMoves[i][j].mover);
+  ownMoves.forEach(mArr => {
+    mArr.forEach(m => {
+      beaterSavableMoves.forEach(m2 => {
+        if (m2.name === knight && m.mover.name === king) {
+          saviors.push(m.mover);
         }
-        if (
-          ownMoves[i][j].x === beaterSavableMoves[k].x &&
-          ownMoves[i][j].y === beaterSavableMoves[k].y
-        ) {
-          saviors.push(ownMoves[i][j].mover);
+        if (m2.y === m.y && m2.x === m.x) {
+          saviors.push(m.mover);
         }
-      }
-    }
-  }
+      });
+    });
+  });
   return saviors;
-};
-
-export const getOppositeDirection = direction => {
-  switch (direction) {
-    case top:
-      return bottom;
-    case bottom:
-      return top;
-    case left:
-      return right;
-    case right:
-      return left;
-    case topLeft:
-      return bottomRight;
-    case topRight:
-      return bottomLeft;
-    case bottomLeft:
-      return topRight;
-    case bottomRight:
-      return topLeft;
-    default:
-      return direction;
-  }
 };

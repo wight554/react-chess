@@ -22,7 +22,6 @@ import {
   checkCheck,
   getSavableMoves,
   getSaviors,
-  getOppositeDirection,
   getAllPlayerMoves
 } from "../../utils";
 import "./Board.css";
@@ -74,7 +73,7 @@ class Board extends Component {
         row = row.map((cell, cIdx) => {
           if (cIdx === x) {
             const piece = field[focus.y][focus.x];
-            // movement logic
+            // open modal only when we gonna update field
             if (updateFieldState) {
               if (checkPromote(moves, { x: x, y: y })) {
                 this.openModal();
@@ -101,67 +100,48 @@ class Board extends Component {
     }
     return newField;
   };
-  handlePromotePawn = choice => {
-    const { promote } = this.state;
-    const { field, changeField, changeCheck, player } = this.props;
-    const newField = JSON.parse(JSON.stringify(field));
-    newField[promote.y][promote.x].name = choice;
-    newField[promote.y][promote.x].directions = piecesDirections[choice];
-    changeField(newField);
-    let checked = checkCheck(newField, getOpponentColor(player));
+  handleMoveEnd = (field, { y, x }, player) => {
+    const { changeCheck } = this.props;
+    let checked = checkCheck(field, getOpponentColor(player));
     if (checked) {
       const beaterSavableMoves = getSavableMoves(
-        newField,
+        field,
         getOpponentColor(player)
       );
-      let ownMoves = getAllPlayerMoves(
-        newField,
-        getPlayerPieces(newField, player)
-      );
-      for (let i = 0; i < ownMoves.length; i++) {
-        ownMoves[i] = ownMoves[i].filter(m => {
+      let ownMoves = getAllPlayerMoves(field, getPlayerPieces(field, player));
+      ownMoves.forEach(mArr => {
+        mArr.filter(m => {
           if (m.mover.name !== king) {
-            for (let i = 0; i < beaterSavableMoves.length; i++) {
-              if (
-                beaterSavableMoves[i].x === m.x &&
-                beaterSavableMoves[i].y === m.y
-              )
-                return true;
-            }
+            if (beaterSavableMoves.some(m2 => m2.y === m.y && m2.x === m.x))
+              return true;
             return !checkCheck(
-              this.newFieldForMove(
-                newField,
-                m.y,
-                m.x,
-                { y: promote.y, x: promote.x },
-                ownMoves[i],
-                false
-              ),
+              this.newFieldForMove(field, m.y, m.x, { y, x }, mArr, false),
               getOpponentColor(player)
             );
           } else return true;
         });
-      }
+      });
       const saviors = getSaviors(beaterSavableMoves, ownMoves);
       // if there are cells that can be covered
       if (saviors.length) {
         // the savior is king
         if (saviors.length === 1 && saviors[0].name === king) {
           // if king is the only savior and can't move it's checkmate
-          let kingMoves = getPieceMoves(newField, saviors[0]);
-          kingMoves = kingMoves.filter(m => {
-            return !checkCheck(
-              this.newFieldForMove(
-                newField,
-                m.y,
-                m.x,
-                { y: saviors[0].y, x: saviors[0].x },
-                kingMoves,
-                false
-              ),
-              getOpponentColor(player)
-            );
-          });
+          let kingMoves = getPieceMoves(field, saviors[0]);
+          kingMoves = kingMoves.filter(
+            m =>
+              !checkCheck(
+                this.newFieldForMove(
+                  field,
+                  m.y,
+                  m.x,
+                  { y: saviors[0].y, x: saviors[0].x },
+                  kingMoves,
+                  false
+                ),
+                getOpponentColor(player)
+              )
+          );
           if (!kingMoves.length) {
             this.endGame(getOpponentColor(player));
           } else {
@@ -171,11 +151,22 @@ class Board extends Component {
           this.setSaviors(saviors);
         }
       } else {
-        // checkmate
         this.endGame(getOpponentColor(player));
       }
       changeCheck(player);
+    } else {
+      this.setSaviors([]);
+      changeCheck("");
     }
+  };
+  handlePromotePawn = choice => {
+    const { promote } = this.state;
+    const { field, changeField, player } = this.props;
+    const newField = JSON.parse(JSON.stringify(field));
+    newField[promote.y][promote.x].name = choice;
+    newField[promote.y][promote.x].directions = piecesDirections[choice];
+    changeField(newField);
+    this.handleMoveEnd(newField, { y: promote.y, x: promote.x }, player);
     this.closeModal();
   };
   handleSquareClick = ({ y, x }) => {
@@ -198,27 +189,24 @@ class Board extends Component {
     ) {
       if (!focus || field[y][x] !== field[focus.y][focus.x]) {
         if (check === player) {
-          // check if piece is savior
           let savior = false;
-          for (let i = 0; i < saviors.length; i++) {
-            if (saviors[i].x === x && saviors[i].y === y) {
-              savior = saviors[i];
-            }
-          }
+          saviors.forEach(s => {
+            if (s.y === y && s.x === x) savior = s;
+          });
           const saviorMoves = possibleDirections(field, { y, x });
           const savableMoves = getSavableMoves(field, getOpponentColor(player));
           let newMoves = [];
           if (savior.name === king) {
             let kingBeatMove = false;
-            for (let i = 0; i < saviorMoves.length; i++) {
-              if (saviorMoves[i].beatable) {
-                kingBeatMove = saviorMoves[i];
+            saviorMoves.forEach(m => {
+              if (m.beatable) {
+                kingBeatMove = m;
               }
-            }
+            });
             newMoves = saviorMoves.filter(
-              o =>
+              m =>
                 !savableMoves.some(
-                  o2 => (o.x === o2.x && o.y === o2.y) || o.route === o2.route
+                  m2 => (m.x === m2.x && m.y === m2.y) || m.route === m2.route
                 )
             );
             // it would be harder to hide from figures higher than pawn
@@ -228,54 +216,50 @@ class Board extends Component {
                 savableMoves[savableMoves.length - 1]
               );
               newMoves = newMoves.filter(
-                o =>
-                  !checkerMoves.some(o2 => {
+                m =>
+                  !checkerMoves.some(m2 => {
                     return (
-                      (o.x === o2.x && o.y === o2.y) ||
-                      (kingBeatMove &&
-                        getOppositeDirection(kingBeatMove.route) === o.route)
+                      (m.x === m2.x && m.y === m2.y) ||
+                      (kingBeatMove && kingBeatMove.route === m2.route)
                     );
                   })
               );
             }
             if (kingBeatMove) newMoves.push(kingBeatMove);
-            newMoves = newMoves.filter(m => {
-              return !checkCheck(
-                this.newFieldForMove(
-                  field,
-                  m.y,
-                  m.x,
-                  { y, x },
-                  newMoves,
-                  false
-                ),
-                getOpponentColor(player)
-              );
-            });
+            newMoves = newMoves.filter(
+              m =>
+                !checkCheck(
+                  this.newFieldForMove(
+                    field,
+                    m.y,
+                    m.x,
+                    { y, x },
+                    newMoves,
+                    false
+                  ),
+                  getOpponentColor(player)
+                )
+            );
           } else if (savior) {
-            for (let i = 0; i < savableMoves.length; i++) {
-              for (let j = 0; j < saviorMoves.length; j++) {
-                if (
-                  savableMoves[i].y === saviorMoves[j].y &&
-                  savableMoves[i].x === saviorMoves[j].x
-                ) {
-                  newMoves.push(saviorMoves[j]);
-                }
-              }
-            }
-            newMoves = newMoves.filter(m => {
-              return !checkCheck(
-                this.newFieldForMove(
-                  field,
-                  m.y,
-                  m.x,
-                  { y, x },
-                  newMoves,
-                  false
-                ),
-                getOpponentColor(player)
-              );
+            savableMoves.forEach(m => {
+              saviorMoves.forEach(m2 => {
+                if (m.x === m2.x && m.y === m2.y) newMoves.push(m2);
+              });
             });
+            newMoves = newMoves.filter(
+              m =>
+                !checkCheck(
+                  this.newFieldForMove(
+                    field,
+                    m.y,
+                    m.x,
+                    { y, x },
+                    newMoves,
+                    false
+                  ),
+                  getOpponentColor(player)
+                )
+            );
           }
           if (newMoves.length) {
             changeMoves(newMoves);
@@ -283,12 +267,20 @@ class Board extends Component {
           }
         } else {
           let newMoves = possibleDirections(field, { y, x });
-          newMoves = newMoves.filter(m => {
-            return !checkCheck(
-              this.newFieldForMove(field, m.y, m.x, { y, x }, newMoves, false),
-              getOpponentColor(player)
-            );
-          });
+          newMoves = newMoves.filter(
+            m =>
+              !checkCheck(
+                this.newFieldForMove(
+                  field,
+                  m.y,
+                  m.x,
+                  { y, x },
+                  newMoves,
+                  false
+                ),
+                getOpponentColor(player)
+              )
+          );
           if (newMoves.length) {
             changeFocus({ y, x });
             changeMoves(newMoves);
@@ -305,79 +297,11 @@ class Board extends Component {
         changeMoves([]);
         changePlayer(getOpponentColor(player));
         changeField(grid);
-        let checked = checkCheck(grid, player);
-        if (checked) {
-          const beaterSavableMoves = getSavableMoves(grid, player);
-          let ownMoves = getAllPlayerMoves(
-            grid,
-            getPlayerPieces(grid, getOpponentColor(player))
-          );
-          for (let i = 0; i < ownMoves.length; i++) {
-            ownMoves[i] = ownMoves[i].filter(m => {
-              if (m.mover.name !== king) {
-                for (let i = 0; i < beaterSavableMoves.length; i++) {
-                  if (
-                    beaterSavableMoves[i].x === m.x &&
-                    beaterSavableMoves[i].y === m.y
-                  )
-                    return true;
-                }
-                return !checkCheck(
-                  this.newFieldForMove(
-                    grid,
-                    m.y,
-                    m.x,
-                    { y, x },
-                    ownMoves[i],
-                    false
-                  ),
-                  player
-                );
-              } else return true;
-            });
-          }
-          const saviors = getSaviors(beaterSavableMoves, ownMoves);
-          // if there are cells that can be covered
-          if (saviors.length) {
-            // the savior is king
-            if (saviors.length === 1 && saviors[0].name === king) {
-              // if king is the only savior and can't move it's checkmate
-              let kingMoves = getPieceMoves(grid, saviors[0]);
-              kingMoves = kingMoves.filter(m => {
-                return !checkCheck(
-                  this.newFieldForMove(
-                    grid,
-                    m.y,
-                    m.x,
-                    { y: saviors[0].y, x: saviors[0].x },
-                    kingMoves,
-                    false
-                  ),
-                  player
-                );
-              });
-              if (!kingMoves.length) {
-                this.endGame(player);
-              } else {
-                this.setSaviors(saviors);
-              }
-            } else {
-              this.setSaviors(saviors);
-            }
-          } else {
-            // checkmate
-            this.endGame(player);
-          }
-          this.props.changeCheck(getOpponentColor(player));
-        } else {
-          this.setSaviors([]);
-          this.props.changeCheck("");
-        }
+        this.handleMoveEnd(grid, { y, x }, getOpponentColor(player));
       }
     }
   };
   renderField = () => {
-    const size = 8;
     let board = [];
     const {
       check,
@@ -388,43 +312,48 @@ class Board extends Component {
     const { saviors } = this.state;
     let kingInfo = {};
     if (check) kingInfo = getKingInfo(getPlayerPieces(field, check));
-    for (let i = 0; i < size; i++) {
+    field.forEach((r, rIdx) => {
       let row = [];
-      for (let j = 0; j < size; j++) {
+      r.forEach((c, cIdx) => {
         let piece = "";
         let color = "";
-        if (field[i][j]) {
-          piece = <Piece color={field[i][j].color} name={field[i][j].name} />;
+        if (c) {
+          piece = <Piece color={c.color} name={c.name} />;
         }
-        for (let k = 0; k < moves.length; k++) {
-          if (moves[k]) {
-            if (moves[k].x === j && moves[k].y === i) {
-              if (moves[k].promote && moves[k].beatable) color = teal;
-              else if (moves[k].promote) color = pink;
-              else if (moves[k].beatable) color = green;
+        moves.forEach(m => {
+          if (m) {
+            if (m.y === rIdx && m.x === cIdx) {
+              if (m.promote && m.beatable) color = teal;
+              else if (m.promote) color = pink;
+              else if (m.beatable) color = green;
               else color = blue;
             }
           }
-        }
-        if (i === kingInfo.y && j === kingInfo.x && check === kingInfo.color)
+        });
+        // can't run or checkmate
+        if (
+          rIdx === kingInfo.y &&
+          cIdx === kingInfo.x &&
+          check === kingInfo.color
+        )
           color = yellow;
         if (saviors.length) {
-          for (let k = 0; k < saviors.length; k++) {
-            if (i === saviors[k].y && j === saviors[k].x) {
-              if (saviors[k].name === king) {
+          saviors.forEach(s => {
+            if (rIdx === s.y && cIdx === s.x) {
+              if (s.name === king) {
                 color = indigo;
               } else {
                 color = purple;
               }
             }
-          }
+          });
         }
-        if (i === y && j === x && field[i][j]) color = red;
+        if (rIdx === y && cIdx === x && c) color = red;
         row.push(
           <Square
-            x={j}
-            y={i}
-            key={`x-${j} y-${i}`}
+            y={rIdx}
+            x={cIdx}
+            key={`y-${rIdx} x-${cIdx}`}
             focus={focus}
             color={color}
             handleSquareClick={this.handleSquareClick}
@@ -432,13 +361,13 @@ class Board extends Component {
             {piece}
           </Square>
         );
-      }
-      board[i] = (
-        <BoardRow y={i} key={`y-${i}`}>
+      });
+      board[rIdx] = (
+        <BoardRow y={rIdx} key={`y-${rIdx}`}>
           {row}
         </BoardRow>
       );
-    }
+    });
     return board;
   };
   render() {
