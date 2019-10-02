@@ -11,7 +11,7 @@ import {
   pieceActions,
   playerActions
 } from "../../actions";
-import { pieces, piecesDirections, colors } from "../../constants";
+import { colors, pieces, piecesDirections, stalemate } from "../../constants";
 import {
   checkSelectors,
   fieldSelectors,
@@ -125,13 +125,14 @@ export default function Board() {
     return newField;
   };
   const handleMoveEnd = (field, { y, x }, player) => {
-    let checked = checkCheck(field, getOpponentColor(player));
+    const allPieces = getPlayerPieces(field, player);
+    const checked = checkCheck(field, getOpponentColor(player));
     if (checked) {
       const beaterSavableMoves = getSavableMoves(
         field,
         getOpponentColor(player)
       );
-      let ownMoves = getAllPlayerMoves(field, getPlayerPieces(field, player));
+      let ownMoves = getAllPlayerMoves(field, allPieces);
       ownMoves.forEach(mArr => {
         mArr.filter(m => {
           if (m.mover.name !== king) {
@@ -178,6 +179,28 @@ export default function Board() {
       }
       dispatchChangeCheck(player);
     } else {
+      // while here check stalemate
+      if (allPieces.length === 1) {
+        // the only piece that can left alone is king
+        let kingMoves = getPieceMoves(field, allPieces[0]);
+        // get safe moves
+        kingMoves = kingMoves.filter(
+          m =>
+            !checkCheck(
+              newFieldForMove(
+                field,
+                m.y,
+                m.x,
+                { y: allPieces[0].y, x: allPieces[0].x },
+                kingMoves,
+                false
+              ),
+              getOpponentColor(player)
+            )
+        );
+        // if there's no then it's stalemate
+        if (!kingMoves.length) endGame(stalemate);
+      }
       dispatchChangeSaviors([]);
       dispatchChangeCheck("");
     }
@@ -206,10 +229,10 @@ export default function Board() {
           const savableMoves = getSavableMoves(field, getOpponentColor(player));
           let newMoves = [];
           if (savior.name === king) {
-            let kingBeatMove = false;
+            let kingBeatMoves = [];
             saviorMoves.forEach(m => {
               if (m.beatable) {
-                kingBeatMove = m;
+                kingBeatMoves.push(m);
               }
             });
             newMoves = saviorMoves.filter(
@@ -229,13 +252,15 @@ export default function Board() {
                   !checkerMoves.some(m2 => {
                     return (
                       (m.x === m2.x && m.y === m2.y) ||
-                      (kingBeatMove &&
-                        getOppositeDirection(kingBeatMove.route) === m.route)
+                      (kingBeatMoves.length &&
+                        kingBeatMoves.some(
+                          m3 => getOppositeDirection(m3.route) === m.route
+                        ))
                     );
                   })
               );
             }
-            if (kingBeatMove) newMoves.push(kingBeatMove);
+            if (kingBeatMoves.length) newMoves = newMoves.concat(kingBeatMoves);
             newMoves = newMoves.filter(
               m =>
                 !checkCheck(
@@ -374,6 +399,11 @@ export default function Board() {
           >
             {!winner ? (
               <PromoteForm handlePromotePawn={handlePromotePawn} />
+            ) : winner === stalemate ? (
+              <Column>
+                <h1>Game over, stalemate</h1>
+                <button onClick={closeModal}>OK</button>
+              </Column>
             ) : (
               <Column>
                 <h1>Game over, winner: {winner}</h1>
