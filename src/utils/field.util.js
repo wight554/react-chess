@@ -205,25 +205,27 @@ export const possibleDirections = (field, { x, y }) => {
         if (name === king) maxStep = 1;
         else maxStep = x;
         for (let i = x - 1; i >= x - maxStep; i--) {
-          if (!field[y][i])
-            moves.push({
-              route: d,
-              y: y,
-              x: i,
-              beatable: false,
-              mover: { ...field[y][x], y, x }
-            });
-          else if (field[y][i].color !== color) {
-            moves.push({
-              route: d,
-              y: y,
-              x: i,
-              beatable: true,
-              piece: field[y][i].name,
-              mover: { ...field[y][x], y, x }
-            });
-            break;
-          } else break;
+          if (i >= 0) {
+            if (!field[y][i])
+              moves.push({
+                route: d,
+                y: y,
+                x: i,
+                beatable: false,
+                mover: { ...field[y][x], y, x }
+              });
+            else if (field[y][i].color !== color) {
+              moves.push({
+                route: d,
+                y: y,
+                x: i,
+                beatable: true,
+                piece: field[y][i].name,
+                mover: { ...field[y][x], y, x }
+              });
+              break;
+            } else break;
+          }
         }
         break;
       }
