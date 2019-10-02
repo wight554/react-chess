@@ -1,8 +1,8 @@
 import {
-  CHANGE_CHECK,
   CHANGE_PLAYER,
-  initialCheckState,
-  initialPlayerState
+  CHANGE_WINNER,
+  initialPlayerState,
+  initialWinnerState
 } from "../constants/actions";
 
 export const playerReducers = {
@@ -14,10 +14,10 @@ export const playerReducers = {
         return state;
     }
   },
-  check: (state = initialCheckState, action) => {
+  winner: (state = initialWinnerState, action) => {
     switch (action.type) {
-      case CHANGE_CHECK:
-        return action.check;
+      case CHANGE_WINNER:
+        return action.winner;
       default:
         return state;
     }

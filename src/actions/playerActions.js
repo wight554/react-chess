@@ -1,16 +1,16 @@
-import { CHANGE_PLAYER, CHANGE_CHECK } from "../constants";
+import { CHANGE_PLAYER, CHANGE_WINNER } from "../constants/actions";
 
 export const playerActions = {
-  changePlayer: function(player) {
+  changePlayer: player => {
     return {
       type: CHANGE_PLAYER,
       player
     };
   },
-  changeCheck: function(check) {
+  changeWinner: winner => {
     return {
-      type: CHANGE_CHECK,
-      check
+      type: CHANGE_WINNER,
+      winner
     };
   }
 };

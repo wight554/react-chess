@@ -1,32 +1,50 @@
 import { createStore, combineReducers } from "redux";
-import { fieldReducers, pieceReducers, playerReducers } from "../reducers";
+import {
+  checkReducers,
+  fieldReducers,
+  pieceReducers,
+  playerReducers
+} from "../reducers";
 import {
   initialCheckState,
   initialFieldState,
   initialFocusState,
+  initialHistoryState,
   initialMovesState,
-  initialPlayerState
+  initialPlayerState,
+  initialPromoteState,
+  initialSaviorsState,
+  initialWinnerState
 } from "../constants/actions";
 
 const initialStoreState = {
   check: initialCheckState,
   field: initialFieldState,
   focus: initialFocusState,
+  history: initialHistoryState,
   moves: initialMovesState,
-  player: initialPlayerState
+  player: initialPlayerState,
+  promote: initialPromoteState,
+  saviors: initialSaviorsState,
+  winner: initialWinnerState
 };
 
-const { field } = fieldReducers;
-const { focus, moves } = pieceReducers;
-const { check, player } = playerReducers;
+const { check, saviors } = checkReducers;
+const { field, history } = fieldReducers;
+const { focus, moves, promote } = pieceReducers;
+const { player, winner } = playerReducers;
 
 const store = createStore(
   combineReducers({
     check,
     field,
     focus,
+    history,
     moves,
-    player
+    player,
+    promote,
+    saviors,
+    winner
   }),
   initialStoreState,
   window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()

@@ -1,4 +1,11 @@
-import { directions, piecesDirections, pieces, colors } from "../constants";
+import {
+  directions,
+  piecesDirections,
+  pieces,
+  colors,
+  numbers,
+  letters
+} from "../constants";
 
 const { king, knight, pawn } = pieces;
 const { black, white } = colors;
@@ -560,7 +567,7 @@ export const getSavableMoves = (field, player) => {
   return beaterSavableMoves;
 };
 
-export const getSaviors = (beaterSavableMoves, ownMoves) => {
+export const getPossibleSaviors = (beaterSavableMoves, ownMoves) => {
   const saviors = [];
   if (!ownMoves.length) return saviors;
   ownMoves.forEach(mArr => {
@@ -576,4 +583,39 @@ export const getSaviors = (beaterSavableMoves, ownMoves) => {
     });
   });
   return saviors;
+};
+
+export const getOppositeDirection = direction => {
+  switch (direction) {
+    case top:
+      return bottom;
+    case bottom:
+      return top;
+    case left:
+      return right;
+    case right:
+      return left;
+    case topLeft:
+      return bottomRight;
+    case topRight:
+      return bottomLeft;
+    case bottomLeft:
+      return topRight;
+    case bottomRight:
+      return topLeft;
+    default:
+      return direction;
+  }
+};
+
+export const coordinatesToNotanion = ({ y, x }) => {
+  let notationLetter = "";
+  let notationNumber = 0;
+  letters.forEach((l, lIdx) => {
+    if (lIdx === x) notationLetter = l;
+  });
+  numbers.forEach((n, nIdx) => {
+    if (nIdx === y) notationNumber = n;
+  });
+  return notationLetter + notationNumber;
 };

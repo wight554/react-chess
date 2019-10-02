@@ -1,10 +1,16 @@
-import { CHANGE_FIELD } from "../constants";
+import { CHANGE_FIELD, CHANGE_HISTORY } from "../constants/actions";
 
 export const fieldActions = {
-  changeField: function(field) {
+  changeField: field => {
     return {
       type: CHANGE_FIELD,
       field
+    };
+  },
+  changeHistory: history => {
+    return {
+      type: CHANGE_HISTORY,
+      history
     };
   }
 };

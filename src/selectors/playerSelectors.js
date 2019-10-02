@@ -1,4 +1,4 @@
 export const playerSelectors = {
-  getCheck: state => state.check,
-  getPlayer: state => state.player
+  getPlayer: state => state.player,
+  getWinner: state => state.winner
 };

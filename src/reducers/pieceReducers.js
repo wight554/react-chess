@@ -1,11 +1,21 @@
 import {
   CHANGE_FOCUS,
   CHANGE_MOVES,
+  CHANGE_PROMOTE,
   initialFocusState,
-  initialMovesState
+  initialMovesState,
+  initialPromoteState
 } from "../constants/actions";
 
 export const pieceReducers = {
+  focus: (state = initialFocusState, action) => {
+    switch (action.type) {
+      case CHANGE_FOCUS:
+        return action.focus;
+      default:
+        return state;
+    }
+  },
   moves: (state = initialMovesState, action) => {
     switch (action.type) {
       case CHANGE_MOVES:
@@ -14,10 +24,10 @@ export const pieceReducers = {
         return state;
     }
   },
-  focus: (state = initialFocusState, action) => {
+  promote: (state = initialPromoteState, action) => {
     switch (action.type) {
-      case CHANGE_FOCUS:
-        return action.focus;
+      case CHANGE_PROMOTE:
+        return action.promote;
       default:
         return state;
     }

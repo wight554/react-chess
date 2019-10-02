@@ -1,18 +1,14 @@
-import React, { Component } from "react";
+import React from "react";
 import { images, colors } from "../../constants";
 
-class Piece extends Component {
-  render() {
-    const { name, color } = this.props;
-    const { black } = colors;
-    return (
-      <img
-        src={images[name]}
-        alt={name}
-        style={{ filter: color === black ? "invert(0%)" : "invert(100%)" }}
-      />
-    );
-  }
-}
+const { black } = colors;
 
-export default Piece;
+export default function Piece({ name, color }) {
+  return (
+    <img
+      src={images[name]}
+      alt={name}
+      style={{ filter: color === black ? "invert(0%)" : "invert(100%)" }}
+    />
+  );
+}

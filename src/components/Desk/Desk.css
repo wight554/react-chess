@@ -1,0 +1,8 @@
+.Desk {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #212121;
+  padding: 10px 5px;
+  color: #fafafa;
+}

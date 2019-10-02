@@ -1,29 +1,28 @@
-import React, { Component } from "react";
+import React from "react";
 import { Provider } from "react-redux";
 import Board from "../Board";
+import Desk from "../Desk";
 import store from "../../store";
 import "./App.css";
 
-class App extends Component {
-  render() {
-    return (
-      <Provider store={store}>
-        <div className="App">
+export default function App() {
+  return (
+    <Provider store={store}>
+      <div className="App">
+        <Desk>
           <Board />
-          <div>
-            Icons made by{" "}
-            <a href="https://www.flaticon.com/authors/freepik" title="Freepik">
-              Freepik
-            </a>{" "}
-            from{" "}
-            <a href="https://www.flaticon.com/" title="Flaticon">
-              www.flaticon.com
-            </a>
-          </div>
+        </Desk>
+        <div>
+          Icons made by{" "}
+          <a href="https://www.flaticon.com/authors/freepik" title="Freepik">
+            Freepik
+          </a>{" "}
+          from{" "}
+          <a href="https://www.flaticon.com/" title="Flaticon">
+            www.flaticon.com
+          </a>
         </div>
-      </Provider>
-    );
-  }
+      </div>
+    </Provider>
+  );
 }
-
-export default App;

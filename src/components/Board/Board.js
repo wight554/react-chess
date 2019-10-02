@@ -1,12 +1,19 @@
 import React, { Component, Fragment } from "react";
 import { connect } from "react-redux";
 import Modal from "react-modal";
-import BoardRow from "../BoardRow";
+import Column from "../Column";
+import Row from "../Row";
 import Piece from "../Piece";
 import Square from "../Square";
-import { fieldActions, pieceActions, playerActions } from "../../actions";
+import {
+  checkActions,
+  fieldActions,
+  pieceActions,
+  playerActions
+} from "../../actions";
 import { pieces, piecesDirections, colors } from "../../constants";
 import {
+  checkSelectors,
   fieldSelectors,
   pieceSelectors,
   playerSelectors
@@ -21,8 +28,10 @@ import {
   getKingInfo,
   checkCheck,
   getSavableMoves,
-  getSaviors,
-  getAllPlayerMoves
+  getPossibleSaviors,
+  getAllPlayerMoves,
+  getOppositeDirection,
+  coordinatesToNotanion
 } from "../../utils";
 import "./Board.css";
 import PromoteForm from "../PromoteForm";
@@ -44,31 +53,23 @@ const customStyles = {
 };
 
 class Board extends Component {
-  constructor() {
-    super();
-    this.state = {
-      modalIsOpen: false,
-      check: false,
-      promote: { x: 8, y: 8 },
-      saviors: [],
-      winner: ""
-    };
-  }
+  state = {
+    modal: false
+  };
   openModal = () => {
-    this.setState({ modalIsOpen: true });
+    this.setState({ modal: true });
   };
   closeModal = () => {
-    this.setState({ modalIsOpen: false });
-  };
-  setSaviors = saviors => {
-    this.setState({ saviors });
+    this.setState({ modal: false });
   };
   endGame = player => {
-    this.setState({ winner: player });
+    const { changeWinner } = this.props;
+    changeWinner(player);
     this.openModal();
   };
   newFieldForMove = (field, y, x, focus, moves, updateFieldState) => {
     const newField = JSON.parse(JSON.stringify(field)).map((row, rIdx) => {
+      const { changePromote } = this.props;
       if (rIdx === y) {
         row = row.map((cell, cIdx) => {
           if (cIdx === x) {
@@ -77,11 +78,9 @@ class Board extends Component {
             if (updateFieldState) {
               if (checkPromote(moves, { x: x, y: y })) {
                 this.openModal();
-                this.setState({
-                  promote: {
-                    x: x,
-                    y: y
-                  }
+                changePromote({
+                  x: x,
+                  y: y
                 });
               }
             }
@@ -101,7 +100,7 @@ class Board extends Component {
     return newField;
   };
   handleMoveEnd = (field, { y, x }, player) => {
-    const { changeCheck } = this.props;
+    const { changeCheck, changeSaviors } = this.props;
     let checked = checkCheck(field, getOpponentColor(player));
     if (checked) {
       const beaterSavableMoves = getSavableMoves(
@@ -121,7 +120,7 @@ class Board extends Component {
           } else return true;
         });
       });
-      const saviors = getSaviors(beaterSavableMoves, ownMoves);
+      const saviors = getPossibleSaviors(beaterSavableMoves, ownMoves);
       // if there are cells that can be covered
       if (saviors.length) {
         // the savior is king
@@ -145,23 +144,22 @@ class Board extends Component {
           if (!kingMoves.length) {
             this.endGame(getOpponentColor(player));
           } else {
-            this.setSaviors(saviors);
+            changeSaviors(saviors);
           }
         } else {
-          this.setSaviors(saviors);
+          changeSaviors(saviors);
         }
       } else {
         this.endGame(getOpponentColor(player));
       }
       changeCheck(player);
     } else {
-      this.setSaviors([]);
+      changeSaviors([]);
       changeCheck("");
     }
   };
   handlePromotePawn = choice => {
-    const { promote } = this.state;
-    const { field, changeField, player } = this.props;
+    const { field, changeField, player, promote } = this.props;
     const newField = JSON.parse(JSON.stringify(field));
     newField[promote.y][promote.x].name = choice;
     newField[promote.y][promote.x].directions = piecesDirections[choice];
@@ -176,12 +174,13 @@ class Board extends Component {
       field,
       moves,
       player,
+      saviors,
+      winner,
       changeField,
       changeFocus,
       changeMoves,
       changePlayer
     } = this.props;
-    const { saviors, winner } = this.state;
     if (winner) return;
     if (
       (!focus || field[y][x]) &&
@@ -220,7 +219,8 @@ class Board extends Component {
                   !checkerMoves.some(m2 => {
                     return (
                       (m.x === m2.x && m.y === m2.y) ||
-                      (kingBeatMove && kingBeatMove.route === m2.route)
+                      (kingBeatMove &&
+                        getOppositeDirection(kingBeatMove.route) === m.route)
                     );
                   })
               );
@@ -298,6 +298,14 @@ class Board extends Component {
         changePlayer(getOpponentColor(player));
         changeField(grid);
         this.handleMoveEnd(grid, { y, x }, getOpponentColor(player));
+        let newHistory = [...this.props.history];
+        newHistory.push({
+          piece: field[focus.y][focus.x],
+          movedFrom: coordinatesToNotanion({ y: focus.y, x: focus.x }),
+          movedTo: coordinatesToNotanion({ y, x }),
+          previousFieldState: field
+        });
+        this.props.changeHistory(newHistory);
       }
     }
   };
@@ -307,9 +315,9 @@ class Board extends Component {
       check,
       field,
       focus: { x, y },
-      moves
+      moves,
+      saviors
     } = this.props;
-    const { saviors } = this.state;
     let kingInfo = {};
     if (check) kingInfo = getKingInfo(getPlayerPieces(field, check));
     field.forEach((r, rIdx) => {
@@ -363,9 +371,9 @@ class Board extends Component {
         );
       });
       board[rIdx] = (
-        <BoardRow y={rIdx} key={`y-${rIdx}`}>
+        <Row y={rIdx} key={`y-${rIdx}`}>
           {row}
-        </BoardRow>
+        </Row>
       );
     });
     return board;
@@ -374,19 +382,22 @@ class Board extends Component {
     return (
       <Fragment>
         <Fragment>
-          <div>Turn: {this.props.player}</div>
           <div className="Board">
             <Modal
-              isOpen={this.state.modalIsOpen}
-              onAfterOpen={this.afterOpenModal}
+              isOpen={this.state.modal}
               onRequestClose={this.closeModal}
+              shouldCloseOnEsc={false}
+              shouldCloseOnOverlayClick={false}
               contentLabel="Piece Modal"
               style={customStyles}
             >
-              {!this.state.winner ? (
+              {!this.props.winner ? (
                 <PromoteForm handlePromotePawn={this.handlePromotePawn} />
               ) : (
-                <h1>Game over, winner: {this.state.winner}</h1>
+                <Column>
+                  <h1>Game over, winner: {this.props.winner}</h1>
+                  <button onClick={this.closeModal}>OK</button>
+                </Column>
               )}
             </Modal>
             {this.renderField()}
@@ -396,27 +407,38 @@ class Board extends Component {
     );
   }
 }
-const { changeField } = fieldActions;
-const { changeFocus, changeMoves } = pieceActions;
-const { changeCheck, changePlayer } = playerActions;
-const { getField } = fieldSelectors;
-const { getFocus, getMoves } = pieceSelectors;
-const { getCheck, getPlayer } = playerSelectors;
+const { changeCheck, changeSaviors } = checkActions;
+const { changeField, changeHistory } = fieldActions;
+const { changeFocus, changeMoves, changePromote } = pieceActions;
+const { changePlayer, changeWinner } = playerActions;
+
+const { getCheck, getSaviors } = checkSelectors;
+const { getField, getHistory } = fieldSelectors;
+const { getFocus, getMoves, getPromote } = pieceSelectors;
+const { getPlayer, getWinner } = playerSelectors;
 
 const mapStateToProps = state => ({
   check: getCheck(state),
   field: getField(state),
   focus: getFocus(state),
+  history: getHistory(state),
   moves: getMoves(state),
-  player: getPlayer(state)
+  player: getPlayer(state),
+  promote: getPromote(state),
+  saviors: getSaviors(state),
+  winner: getWinner(state)
 });
 
 const mapDispatchToProps = {
   changeField,
   changeCheck,
   changeFocus,
+  changeHistory,
   changeMoves,
-  changePlayer
+  changePlayer,
+  changePromote,
+  changeSaviors,
+  changeWinner
 };
 
 export default connect(

@@ -1,6 +1,6 @@
 import React, { Component } from "react";
-import "./Square.css";
 import { getCellColor } from "../../utils";
+import "./Square.css";
 
 class Square extends Component {
   sendPositon = () => {
