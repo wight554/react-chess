@@ -1,4 +1,4 @@
-import React, { Fragment, useState } from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Modal from "react-modal";
 import Column from "../Column";
@@ -386,8 +386,8 @@ export default function Board() {
     return board;
   };
   return (
-    <Fragment>
-      <Fragment>
+    <>
+      <>
         <div className="Board">
           <Modal
             isOpen={modal}
@@ -413,7 +413,7 @@ export default function Board() {
           </Modal>
           {renderField()}
         </div>
-      </Fragment>
-    </Fragment>
+      </>
+    </>
   );
 }
