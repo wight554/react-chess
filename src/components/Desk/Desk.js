@@ -1,6 +1,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import Column from "../Column";
+import LettersRow from "../LettersRow";
 import Row from "../Row";
 import SymbolCell from "../SymbolCell";
 import { playerSelectors } from "../../selectors";
@@ -19,14 +20,14 @@ export default function Desk({ children }) {
   ));
   return (
     <div className="Desk">
-      <Row style={{ padding: "5px 0 10px 0" }}>Turn: {player}</Row>
-      <Row style={{ width: "480px" }}>{letterCells}</Row>
+      <Row>Turn: {player}</Row>
+      <LettersRow>{letterCells}</LettersRow>
       <Row>
         <Column>{numberCells}</Column>
         {children}
         <Column>{numberCells}</Column>
       </Row>
-      <Row style={{ width: "480px" }}>{letterCells}</Row>
+      <LettersRow>{letterCells}</LettersRow>
     </div>
   );
 }

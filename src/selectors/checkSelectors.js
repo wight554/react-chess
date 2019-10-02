@@ -1,4 +1,4 @@
 export const checkSelectors = {
   getCheck: state => state.check,
-  getSaviors: state => state.saviors,
+  getSaviors: state => state.saviors
 };

@@ -6,3 +6,9 @@
   padding: 10px 5px;
   color: #fafafa;
 }
+
+@media only screen and (max-width: 600px) {
+  .Desk {
+    padding: 5px 2px;
+  }
+}
