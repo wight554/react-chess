@@ -1,22 +1,18 @@
-import React, { Component } from "react";
+import React from "react";
 import { getCellColor } from "../../utils";
 import "./Square.css";
 
-class Square extends Component {
-  sendPositon = () => {
-    this.props.handleSquareClick(this.props);
+export default function Square(props) {
+  const sendPositon = () => {
+    props.handleSquareClick(props);
   };
-  render() {
-    return (
-      <div
-        className="Square"
-        style={{ backgroundColor: getCellColor(this.props) }}
-        onClick={this.sendPositon}
-      >
-        {this.props.children}
-      </div>
-    );
-  }
+  return (
+    <div
+      className="Square"
+      style={{ backgroundColor: getCellColor(props) }}
+      onClick={sendPositon}
+    >
+      {props.children}
+    </div>
+  );
 }
-
-export default Square;

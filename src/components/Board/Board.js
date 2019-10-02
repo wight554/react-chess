@@ -1,5 +1,5 @@
-import React, { Component, Fragment } from "react";
-import { connect } from "react-redux";
+import React, { Fragment, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import Modal from "react-modal";
 import Column from "../Column";
 import Row from "../Row";
@@ -41,7 +41,7 @@ const { blue, green, indigo, pink, red, purple, teal, yellow } = colors;
 
 Modal.setAppElement("#root");
 
-const customStyles = {
+const modalStyles = {
   content: {
     top: "50%",
     left: "50%",
@@ -52,35 +52,60 @@ const customStyles = {
   }
 };
 
-class Board extends Component {
-  state = {
-    modal: false
+const { changeCheck, changeSaviors } = checkActions;
+const { changeField, changeHistory } = fieldActions;
+const { changeFocus, changeMoves, changePromote } = pieceActions;
+const { changePlayer, changeWinner } = playerActions;
+
+const { getCheck, getSaviors } = checkSelectors;
+const { getField, getHistory } = fieldSelectors;
+const { getFocus, getMoves, getPromote } = pieceSelectors;
+const { getPlayer, getWinner } = playerSelectors;
+
+export default function Board() {
+  const check = useSelector(getCheck);
+  const field = useSelector(getField);
+  const focus = useSelector(getFocus);
+  const history = useSelector(getHistory);
+  const moves = useSelector(getMoves);
+  const player = useSelector(getPlayer);
+  const promote = useSelector(getPromote);
+  const saviors = useSelector(getSaviors);
+  const winner = useSelector(getWinner);
+  const dispatch = useDispatch();
+  const dispatchChangeCheck = check => dispatch(changeCheck(check));
+  const dispatchChangeField = field => dispatch(changeField(field));
+  const dispatchChangeFocus = focus => dispatch(changeFocus(focus));
+  const dispatchChangeHistory = history => dispatch(changeHistory(history));
+  const dispatchChangeMoves = moves => dispatch(changeMoves(moves));
+  const dispatchChangePlayer = player => dispatch(changePlayer(player));
+  const dispatchChangePromote = promote => dispatch(changePromote(promote));
+  const dispatchChangeSaviors = saviors => dispatch(changeSaviors(saviors));
+  const dispatchChangeWinner = winner => dispatch(changeWinner(winner));
+  const [modal, setModal] = useState(false);
+  const openModal = () => {
+    setModal(true);
   };
-  openModal = () => {
-    this.setState({ modal: true });
+  const closeModal = () => {
+    setModal(false);
   };
-  closeModal = () => {
-    this.setState({ modal: false });
+  const endGame = player => {
+    dispatchChangeWinner(player);
+    openModal();
   };
-  endGame = player => {
-    const { changeWinner } = this.props;
-    changeWinner(player);
-    this.openModal();
-  };
-  newFieldForMove = (field, y, x, focus, moves, updateFieldState) => {
+  const newFieldForMove = (field, y, x, focus, moves, updateFieldState) => {
     const newField = JSON.parse(JSON.stringify(field)).map((row, rIdx) => {
-      const { changePromote } = this.props;
       if (rIdx === y) {
         row = row.map((cell, cIdx) => {
           if (cIdx === x) {
             const piece = field[focus.y][focus.x];
             // open modal only when we gonna update field
             if (updateFieldState) {
-              if (checkPromote(moves, { x: x, y: y })) {
-                this.openModal();
-                changePromote({
-                  x: x,
-                  y: y
+              if (checkPromote(moves, { y, x })) {
+                openModal();
+                dispatchChangePromote({
+                  y,
+                  x
                 });
               }
             }
@@ -99,8 +124,7 @@ class Board extends Component {
     }
     return newField;
   };
-  handleMoveEnd = (field, { y, x }, player) => {
-    const { changeCheck, changeSaviors } = this.props;
+  const handleMoveEnd = (field, { y, x }, player) => {
     let checked = checkCheck(field, getOpponentColor(player));
     if (checked) {
       const beaterSavableMoves = getSavableMoves(
@@ -114,7 +138,7 @@ class Board extends Component {
             if (beaterSavableMoves.some(m2 => m2.y === m.y && m2.x === m.x))
               return true;
             return !checkCheck(
-              this.newFieldForMove(field, m.y, m.x, { y, x }, mArr, false),
+              newFieldForMove(field, m.y, m.x, { y, x }, mArr, false),
               getOpponentColor(player)
             );
           } else return true;
@@ -130,7 +154,7 @@ class Board extends Component {
           kingMoves = kingMoves.filter(
             m =>
               !checkCheck(
-                this.newFieldForMove(
+                newFieldForMove(
                   field,
                   m.y,
                   m.x,
@@ -142,45 +166,31 @@ class Board extends Component {
               )
           );
           if (!kingMoves.length) {
-            this.endGame(getOpponentColor(player));
+            endGame(getOpponentColor(player));
           } else {
-            changeSaviors(saviors);
+            dispatchChangeSaviors(saviors);
           }
         } else {
-          changeSaviors(saviors);
+          dispatchChangeSaviors(saviors);
         }
       } else {
-        this.endGame(getOpponentColor(player));
+        endGame(getOpponentColor(player));
       }
-      changeCheck(player);
+      dispatchChangeCheck(player);
     } else {
-      changeSaviors([]);
-      changeCheck("");
+      dispatchChangeSaviors([]);
+      dispatchChangeCheck("");
     }
   };
-  handlePromotePawn = choice => {
-    const { field, changeField, player, promote } = this.props;
+  const handlePromotePawn = choice => {
     const newField = JSON.parse(JSON.stringify(field));
     newField[promote.y][promote.x].name = choice;
     newField[promote.y][promote.x].directions = piecesDirections[choice];
-    changeField(newField);
-    this.handleMoveEnd(newField, { y: promote.y, x: promote.x }, player);
-    this.closeModal();
+    dispatchChangeField(newField);
+    handleMoveEnd(newField, { y: promote.y, x: promote.x }, player);
+    closeModal();
   };
-  handleSquareClick = ({ y, x }) => {
-    const {
-      check,
-      focus,
-      field,
-      moves,
-      player,
-      saviors,
-      winner,
-      changeField,
-      changeFocus,
-      changeMoves,
-      changePlayer
-    } = this.props;
+  const handleSquareClick = ({ y, x }) => {
     if (winner) return;
     if (
       (!focus || field[y][x]) &&
@@ -229,14 +239,7 @@ class Board extends Component {
             newMoves = newMoves.filter(
               m =>
                 !checkCheck(
-                  this.newFieldForMove(
-                    field,
-                    m.y,
-                    m.x,
-                    { y, x },
-                    newMoves,
-                    false
-                  ),
+                  newFieldForMove(field, m.y, m.x, { y, x }, newMoves, false),
                   getOpponentColor(player)
                 )
             );
@@ -249,75 +252,54 @@ class Board extends Component {
             newMoves = newMoves.filter(
               m =>
                 !checkCheck(
-                  this.newFieldForMove(
-                    field,
-                    m.y,
-                    m.x,
-                    { y, x },
-                    newMoves,
-                    false
-                  ),
+                  newFieldForMove(field, m.y, m.x, { y, x }, newMoves, false),
                   getOpponentColor(player)
                 )
             );
           }
           if (newMoves.length) {
-            changeMoves(newMoves);
-            changeFocus({ y, x });
+            dispatchChangeMoves(newMoves);
+            dispatchChangeFocus({ y, x });
           }
         } else {
           let newMoves = possibleDirections(field, { y, x });
           newMoves = newMoves.filter(
             m =>
               !checkCheck(
-                this.newFieldForMove(
-                  field,
-                  m.y,
-                  m.x,
-                  { y, x },
-                  newMoves,
-                  false
-                ),
+                newFieldForMove(field, m.y, m.x, { y, x }, newMoves, false),
                 getOpponentColor(player)
               )
           );
           if (newMoves.length) {
-            changeFocus({ y, x });
-            changeMoves(newMoves);
+            dispatchChangeFocus({ y, x });
+            dispatchChangeMoves(newMoves);
           }
         }
       } else {
-        changeFocus(false);
-        changeMoves([]);
+        dispatchChangeFocus(false);
+        dispatchChangeMoves([]);
       }
     } else if (focus && (!field[y][x] || field[y][x].color !== player)) {
-      const grid = this.newFieldForMove(field, y, x, focus, moves, true);
+      const grid = newFieldForMove(field, y, x, focus, moves, true);
       if (JSON.stringify(grid[y][x]) !== JSON.stringify(field[y][x])) {
-        changeFocus(false);
-        changeMoves([]);
-        changePlayer(getOpponentColor(player));
-        changeField(grid);
-        this.handleMoveEnd(grid, { y, x }, getOpponentColor(player));
-        let newHistory = [...this.props.history];
+        dispatchChangeFocus(false);
+        dispatchChangeMoves([]);
+        dispatchChangePlayer(getOpponentColor(player));
+        dispatchChangeField(grid);
+        handleMoveEnd(grid, { y, x }, getOpponentColor(player));
+        let newHistory = [...history];
         newHistory.push({
           piece: field[focus.y][focus.x],
           movedFrom: coordinatesToNotanion({ y: focus.y, x: focus.x }),
           movedTo: coordinatesToNotanion({ y, x }),
           previousFieldState: field
         });
-        this.props.changeHistory(newHistory);
+        dispatchChangeHistory(newHistory);
       }
     }
   };
-  renderField = () => {
+  const renderField = () => {
     let board = [];
-    const {
-      check,
-      field,
-      focus: { x, y },
-      moves,
-      saviors
-    } = this.props;
     let kingInfo = {};
     if (check) kingInfo = getKingInfo(getPlayerPieces(field, check));
     field.forEach((r, rIdx) => {
@@ -356,7 +338,7 @@ class Board extends Component {
             }
           });
         }
-        if (rIdx === y && cIdx === x && c) color = red;
+        if (rIdx === focus.y && cIdx === focus.x && c) color = red;
         row.push(
           <Square
             y={rIdx}
@@ -364,7 +346,7 @@ class Board extends Component {
             key={`y-${rIdx} x-${cIdx}`}
             focus={focus}
             color={color}
-            handleSquareClick={this.handleSquareClick}
+            handleSquareClick={handleSquareClick}
           >
             {piece}
           </Square>
@@ -378,70 +360,30 @@ class Board extends Component {
     });
     return board;
   };
-  render() {
-    return (
+  return (
+    <Fragment>
       <Fragment>
-        <Fragment>
-          <div className="Board">
-            <Modal
-              isOpen={this.state.modal}
-              onRequestClose={this.closeModal}
-              shouldCloseOnEsc={false}
-              shouldCloseOnOverlayClick={false}
-              contentLabel="Piece Modal"
-              style={customStyles}
-            >
-              {!this.props.winner ? (
-                <PromoteForm handlePromotePawn={this.handlePromotePawn} />
-              ) : (
-                <Column>
-                  <h1>Game over, winner: {this.props.winner}</h1>
-                  <button onClick={this.closeModal}>OK</button>
-                </Column>
-              )}
-            </Modal>
-            {this.renderField()}
-          </div>
-        </Fragment>
+        <div className="Board">
+          <Modal
+            isOpen={modal}
+            onRequestClose={closeModal}
+            shouldCloseOnEsc={false}
+            shouldCloseOnOverlayClick={false}
+            contentLabel="Piece Modal"
+            style={modalStyles}
+          >
+            {!winner ? (
+              <PromoteForm handlePromotePawn={handlePromotePawn} />
+            ) : (
+              <Column>
+                <h1>Game over, winner: {winner}</h1>
+                <button onClick={closeModal}>OK</button>
+              </Column>
+            )}
+          </Modal>
+          {renderField()}
+        </div>
       </Fragment>
-    );
-  }
+    </Fragment>
+  );
 }
-const { changeCheck, changeSaviors } = checkActions;
-const { changeField, changeHistory } = fieldActions;
-const { changeFocus, changeMoves, changePromote } = pieceActions;
-const { changePlayer, changeWinner } = playerActions;
-
-const { getCheck, getSaviors } = checkSelectors;
-const { getField, getHistory } = fieldSelectors;
-const { getFocus, getMoves, getPromote } = pieceSelectors;
-const { getPlayer, getWinner } = playerSelectors;
-
-const mapStateToProps = state => ({
-  check: getCheck(state),
-  field: getField(state),
-  focus: getFocus(state),
-  history: getHistory(state),
-  moves: getMoves(state),
-  player: getPlayer(state),
-  promote: getPromote(state),
-  saviors: getSaviors(state),
-  winner: getWinner(state)
-});
-
-const mapDispatchToProps = {
-  changeField,
-  changeCheck,
-  changeFocus,
-  changeHistory,
-  changeMoves,
-  changePlayer,
-  changePromote,
-  changeSaviors,
-  changeWinner
-};
-
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(Board);
