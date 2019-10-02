@@ -570,20 +570,23 @@ export const getSavableMoves = (field, player) => {
 };
 
 export const getPossibleSaviors = (beaterSavableMoves, ownMoves) => {
-  const saviors = [];
+  let saviors = [];
   if (!ownMoves.length) return saviors;
   ownMoves.forEach(mArr => {
     mArr.forEach(m => {
       beaterSavableMoves.forEach(m2 => {
         if (m2.name === knight && m.mover.name === king) {
           saviors.push(m.mover);
-        }
-        if (m2.y === m.y && m2.x === m.x) {
+        } else if (m2.y === m.y && m2.x === m.x) {
           saviors.push(m.mover);
         }
       });
     });
   });
+  saviors = saviors.filter(
+    (savior, index, self) =>
+      index === self.findIndex(s => s.x === savior.x && s.y === savior.y)
+  );
   return saviors;
 };
 
