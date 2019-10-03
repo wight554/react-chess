@@ -10,6 +10,7 @@ import {
   initialFieldState,
   initialFocusState,
   initialHistoryState,
+  initialHistoryStepState,
   initialMovesState,
   initialPlayerState,
   initialPromoteState,
@@ -22,6 +23,7 @@ const initialStoreState = {
   field: initialFieldState,
   focus: initialFocusState,
   history: initialHistoryState,
+  historyStep: initialHistoryStepState,
   moves: initialMovesState,
   player: initialPlayerState,
   promote: initialPromoteState,
@@ -30,7 +32,7 @@ const initialStoreState = {
 };
 
 const { check, saviors } = checkReducers;
-const { field, history } = fieldReducers;
+const { field, history, historyStep } = fieldReducers;
 const { focus, moves, promote } = pieceReducers;
 const { player, winner } = playerReducers;
 
@@ -40,6 +42,7 @@ const store = createStore(
     field,
     focus,
     history,
+    historyStep,
     moves,
     player,
     promote,

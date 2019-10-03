@@ -1,4 +1,8 @@
-import { CHANGE_FIELD, CHANGE_HISTORY } from "../constants/actions";
+import {
+  CHANGE_FIELD,
+  CHANGE_HISTORY,
+  CHANGE_HISTORY_STEP
+} from "../constants/actions";
 
 export const fieldActions = {
   changeField: field => {
@@ -11,6 +15,12 @@ export const fieldActions = {
     return {
       type: CHANGE_HISTORY,
       history
+    };
+  },
+  changeHistoryStep: historyStep => {
+    return {
+      type: CHANGE_HISTORY_STEP,
+      historyStep
     };
   }
 };

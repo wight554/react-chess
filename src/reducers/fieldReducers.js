@@ -1,8 +1,10 @@
 import {
   CHANGE_FIELD,
   CHANGE_HISTORY,
+  CHANGE_HISTORY_STEP,
   initialFieldState,
-  initialHistoryState
+  initialHistoryState,
+  initialHistoryStepState
 } from "../constants/actions";
 
 export const fieldReducers = {
@@ -18,6 +20,14 @@ export const fieldReducers = {
     switch (action.type) {
       case CHANGE_HISTORY:
         return action.history;
+      default:
+        return state;
+    }
+  },
+  historyStep: (state = initialHistoryStepState, action) => {
+    switch (action.type) {
+      case CHANGE_HISTORY_STEP:
+        return action.historyStep;
       default:
         return state;
     }

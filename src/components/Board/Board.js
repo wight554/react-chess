@@ -53,12 +53,12 @@ const modalStyles = {
 };
 
 const { changeCheck, changeSaviors } = checkActions;
-const { changeField, changeHistory } = fieldActions;
+const { changeField, changeHistory, changeHistoryStep } = fieldActions;
 const { changeFocus, changeMoves, changePromote } = pieceActions;
 const { changePlayer, changeWinner } = playerActions;
 
 const { getCheck, getSaviors } = checkSelectors;
-const { getField, getHistory } = fieldSelectors;
+const { getField, getHistory, getHistoryStep } = fieldSelectors;
 const { getFocus, getMoves, getPromote } = pieceSelectors;
 const { getPlayer, getWinner } = playerSelectors;
 
@@ -67,6 +67,7 @@ export default function Board() {
   const field = useSelector(getField);
   const focus = useSelector(getFocus);
   const history = useSelector(getHistory);
+  const historyStep = useSelector(getHistoryStep);
   const moves = useSelector(getMoves);
   const player = useSelector(getPlayer);
   const promote = useSelector(getPromote);
@@ -77,12 +78,17 @@ export default function Board() {
   const dispatchChangeField = field => dispatch(changeField(field));
   const dispatchChangeFocus = focus => dispatch(changeFocus(focus));
   const dispatchChangeHistory = history => dispatch(changeHistory(history));
+  const dispatchChangeHistoryStep = historyStep =>
+    dispatch(changeHistoryStep(historyStep));
   const dispatchChangeMoves = moves => dispatch(changeMoves(moves));
   const dispatchChangePlayer = player => dispatch(changePlayer(player));
   const dispatchChangePromote = promote => dispatch(changePromote(promote));
   const dispatchChangeSaviors = saviors => dispatch(changeSaviors(saviors));
   const dispatchChangeWinner = winner => dispatch(changeWinner(winner));
   const [modal, setModal] = useState(false);
+  let currentCheck = "";
+  let currentSaviors = [];
+  let currentWinner = "";
   const openModal = () => {
     setModal(true);
   };
@@ -91,6 +97,7 @@ export default function Board() {
   };
   const endGame = player => {
     dispatchChangeWinner(player);
+    currentWinner = player;
     openModal();
   };
   const newFieldForMove = (field, y, x, focus, moves, updateFieldState) => {
@@ -145,13 +152,13 @@ export default function Board() {
           } else return true;
         });
       });
-      const saviors = getPossibleSaviors(beaterSavableMoves, ownMoves);
+      const newSaviors = getPossibleSaviors(beaterSavableMoves, ownMoves);
       // if there are cells that can be covered
-      if (saviors.length) {
+      if (newSaviors.length) {
         // the savior is king
-        if (saviors.length === 1 && saviors[0].name === king) {
+        if (newSaviors.length === 1 && newSaviors[0].name === king) {
           // if king is the only savior and can't move it's checkmate
-          let kingMoves = getPieceMoves(field, saviors[0]);
+          let kingMoves = getPieceMoves(field, newSaviors[0]);
           kingMoves = kingMoves.filter(
             m =>
               !checkCheck(
@@ -159,7 +166,7 @@ export default function Board() {
                   field,
                   m.y,
                   m.x,
-                  { y: saviors[0].y, x: saviors[0].x },
+                  { y: newSaviors[0].y, x: newSaviors[0].x },
                   kingMoves,
                   false
                 ),
@@ -169,15 +176,18 @@ export default function Board() {
           if (!kingMoves.length) {
             endGame(getOpponentColor(player));
           } else {
-            dispatchChangeSaviors(saviors);
+            if (newSaviors !== saviors) dispatchChangeSaviors(newSaviors);
+            currentSaviors = newSaviors;
           }
         } else {
-          dispatchChangeSaviors(saviors);
+          if (newSaviors !== saviors) dispatchChangeSaviors(newSaviors);
+          currentSaviors = newSaviors;
         }
       } else {
         endGame(getOpponentColor(player));
       }
-      dispatchChangeCheck(player);
+      if (check !== player) dispatchChangeCheck(player);
+      currentCheck = player;
     } else {
       // while here check stalemate
       if (allPieces.length === 1) {
@@ -201,8 +211,9 @@ export default function Board() {
         // if there's no then it's stalemate
         if (!kingMoves.length) endGame(stalemate);
       }
-      dispatchChangeSaviors([]);
-      dispatchChangeCheck("");
+      if (saviors.length !== 0) dispatchChangeSaviors([]);
+      if (check !== "") dispatchChangeCheck("");
+      currentCheck = "";
     }
   };
   const handlePromotePawn = choice => {
@@ -211,6 +222,11 @@ export default function Board() {
     newField[promote.y][promote.x].directions = piecesDirections[choice];
     dispatchChangeField(newField);
     handleMoveEnd(newField, { y: promote.y, x: promote.x }, player);
+    let newHistory = [...history];
+    newHistory[newHistory.length - 1].fieldState = newField;
+    newHistory[newHistory.length - 1].piece = newField[promote.y][promote.x];
+    newHistory[newHistory.length - 1].promote = true;
+    dispatchChangeHistory(newHistory);
     closeModal();
   };
   const handleSquareClick = ({ y, x }) => {
@@ -313,13 +329,19 @@ export default function Board() {
         dispatchChangeField(grid);
         handleMoveEnd(grid, { y, x }, getOpponentColor(player));
         let newHistory = [...history];
+        if (historyStep < newHistory.length - 1)
+          newHistory.length = historyStep + 1;
         newHistory.push({
           piece: field[focus.y][focus.x],
           movedFrom: coordinatesToNotanion({ y: focus.y, x: focus.x }),
           movedTo: coordinatesToNotanion({ y, x }),
-          previousFieldState: field
+          fieldState: grid,
+          check: currentCheck,
+          saviors: currentSaviors,
+          winner: currentWinner
         });
         dispatchChangeHistory(newHistory);
+        dispatchChangeHistoryStep(newHistory.length - 1);
       }
     }
   };
@@ -385,6 +407,7 @@ export default function Board() {
     });
     return board;
   };
+  const generatedField = renderField();
   return (
     <>
       <>
@@ -411,7 +434,7 @@ export default function Board() {
               </Column>
             )}
           </Modal>
-          {renderField()}
+          {generatedField}
         </div>
       </>
     </>
