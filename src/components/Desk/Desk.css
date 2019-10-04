@@ -10,22 +10,39 @@
 
 .Desk .Row {
   min-width: 480px;
+  max-height: 480px;
 }
 
-@media only screen and (max-width: 600px) {
+@media all and (max-width: 550px) {
   .Desk {
     padding: 5px 2px;
   }
   .Desk .Row {
-    min-width: 320px;
+    min-width: 400px;
+    max-height: 400px;
   }
 }
 
-@media only screen and (max-width: 400px) {
+@media all and (max-width: 450px) {
   .Desk {
     padding: 2px 1px;
   }
   .Desk .Row {
+    min-width: 360px;
+    max-height: 360px;
+  }
+}
+
+@media all and (max-width: 400px) {
+  .Desk .Row {
+    min-width: 320px;
+    max-height: 320px;
+  }
+}
+
+@media all and (max-width: 360px) {
+  .Desk .Row {
     min-width: 280px;
+    max-height: 280px;
   }
 }
