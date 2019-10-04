@@ -27,7 +27,7 @@ export default function PromoteForm({ handlePromotePawn }) {
   return (
     <form className="PromoteForm" onSubmit={handleSubmit} method="">
       {radioButtons}
-      <input type="submit" />
+      <input type="submit" value="Submit" />
     </form>
   );
 }
