@@ -2,7 +2,6 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Board from "../Board";
 import Column from "../Column";
-import LettersRow from "../LettersRow";
 import Row from "../Row";
 import SymbolCell from "../SymbolCell";
 import {
@@ -89,13 +88,13 @@ export default function Desk({ children }) {
   return (
     <div className="Desk">
       <Row>Turn: {player}</Row>
-      <LettersRow>{letterCells}</LettersRow>
+      <Row>{letterCells}</Row>
       <Row>
         <Column>{numberCells}</Column>
         <Board />
         <Column>{numberCells}</Column>
       </Row>
-      <LettersRow>{letterCells}</LettersRow>
+      <Row>{letterCells}</Row>
       <Column>{stepsList}</Column>
     </div>
   );

@@ -6,15 +6,14 @@
   align-items: center;
 }
 
-.Square > img {
-  max-height: 43px;
-}
-
 @media only screen and (max-width: 600px) {
   .Square {
-    padding: 3px;
+    padding: 2px;
   }
-  .Square > img {
-    max-height: 33px;
+}
+
+@media only screen and (max-width: 400px) {
+  .Square {
+    padding: 1px;
   }
 }

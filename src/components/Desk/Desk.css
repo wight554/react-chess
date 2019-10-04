@@ -1,5 +1,6 @@
 .Desk {
   display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: center;
   background-color: #212121;
@@ -7,8 +8,24 @@
   color: #fafafa;
 }
 
+.Desk .Row {
+  min-width: 480px;
+}
+
 @media only screen and (max-width: 600px) {
   .Desk {
     padding: 5px 2px;
+  }
+  .Desk .Row {
+    min-width: 320px;
+  }
+}
+
+@media only screen and (max-width: 400px) {
+  .Desk {
+    padding: 2px 1px;
+  }
+  .Desk .Row {
+    min-width: 280px;
   }
 }
