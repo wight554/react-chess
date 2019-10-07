@@ -5,29 +5,11 @@
 }
 
 .Board > * {
-  min-height: 60px;
+  min-height: 4.5vw;
 }
 
-@media all and (max-width: 550px) {
+@media only screen and (orientation: portrait) {
   .Board > * {
-    min-height: 50px;
-  }
-}
-
-@media all and (max-width: 450px) {
-  .Board > * {
-    min-height: 45px;
-  }
-}
-
-@media all and (max-width: 400px) {
-  .Board > * {
-    min-height: 40px;
-  }
-}
-
-@media all and (max-width: 360px) {
-  .Board > * {
-    min-height: 35px;
+    min-height: 11vw;
   }
 }

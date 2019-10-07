@@ -1,14 +1,7 @@
 import React from "react";
-import { images, colors } from "../../constants";
-
-const { black } = colors;
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { images } from "../../constants";
 
 export default function Piece({ name, color }) {
-  return (
-    <img
-      src={images[name]}
-      alt={name}
-      style={{ filter: color === black ? "invert(0%)" : "invert(100%)" }}
-    />
-  );
+  return <FontAwesomeIcon icon={images[name]} alt={name} style={{ color }} />;
 }

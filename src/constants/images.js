@@ -1,15 +1,17 @@
-import bishop from "../assets/pieces/bishop.svg";
-import king from "../assets/pieces/king.svg";
-import knight from "../assets/pieces/knight.svg";
-import pawn from "../assets/pieces/pawn.svg";
-import queen from "../assets/pieces/queen.svg";
-import rook from "../assets/pieces/rook.svg";
+import {
+  faChessBishop,
+  faChessKing,
+  faChessKnight,
+  faChessPawn,
+  faChessQueen,
+  faChessRook
+} from "@fortawesome/free-solid-svg-icons";
 
 export const images = {
-  bishop,
-  king,
-  knight,
-  pawn,
-  queen,
-  rook
+  bishop: faChessBishop,
+  king: faChessKing,
+  knight: faChessKnight,
+  pawn: faChessPawn,
+  queen: faChessQueen,
+  rook: faChessRook
 };
